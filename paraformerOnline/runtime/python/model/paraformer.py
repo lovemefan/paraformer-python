@@ -3,6 +3,7 @@
 # @Time      :2023/8/8 20:04
 # @Author    :lovemefan
 # @Email     :lovemefan@outlook.com
+import glob
 import os
 from pathlib import Path
 from typing import List, Tuple, Union
@@ -34,7 +35,7 @@ class ParaformerOnlineModel:
         encoder_model_file = os.path.join(model_dir, "model.onnx")
         decoder_model_file = os.path.join(model_dir, "decoder.onnx")
         if quantize:
-            encoder_model_file = os.path.join(model_dir, "model_quant.onnx")
+            encoder_model_file = glob.glob(os.path.join(model_dir, "model_quant_*.onnx"))
             decoder_model_file = os.path.join(model_dir, "decoder_quant.onnx")
 
         config_file = os.path.join(model_dir, "config.yaml")

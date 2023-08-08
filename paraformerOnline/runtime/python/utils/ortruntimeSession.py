@@ -3,6 +3,7 @@
 # @Time      :2023/8/8 20:20
 # @Author    :lovemefan
 # @Email     :lovemefan@outlook.com
+import io
 import logging
 import re
 import warnings
@@ -154,7 +155,15 @@ class OrtInferSession:
             EP_list = [(cuda_ep, cuda_provider_options)]
         EP_list.append((cpu_ep, cpu_provider_options))
 
-        self._verify_model(model_file)
+        if isinstance(model_file, list):
+            merged_model_file = b""
+            for file in model_file:
+                with open(file, 'rb') as onnx_file:
+                    merged_model_file += onnx_file.read()
+
+            model_file = merged_model_file
+        else:
+            self._verify_model(model_file)
         self.session = InferenceSession(
             model_file, sess_options=sess_opt, providers=EP_list
         )
