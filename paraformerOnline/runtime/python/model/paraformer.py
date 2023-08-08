@@ -11,20 +11,14 @@ import numpy as np
 
 from paraformerOnline.runtime.python.utils.audioHelper import AudioReader
 from paraformerOnline.runtime.python.utils.ortruntimeSession import (
-    CharTokenizer,
-    Hypothesis,
-    OrtInferSession,
-    TokenIDConverter,
-    read_yaml,
-)
-from paraformerOnline.runtime.python.utils.postprocess import sentence_postprocess
+    CharTokenizer, Hypothesis, OrtInferSession, TokenIDConverter, read_yaml)
+from paraformerOnline.runtime.python.utils.postprocess import \
+    sentence_postprocess
 from paraformerOnline.runtime.python.utils.preprocess import (
-    SinusoidalPositionEncoderOnline,
-    WavFrontendOnline,
-)
+    SinusoidalPositionEncoderOnline, WavFrontendOnline)
 
 
-class ParaformerOnline:
+class ParaformerOnlineModel:
     def __init__(
         self,
         model_dir: Union[str, Path] = None,
@@ -33,7 +27,6 @@ class ParaformerOnline:
         device_id: Union[str, int] = "-1",
         quantize: bool = False,
         intra_op_num_threads: int = 4,
-        cache_dir: str = None,
     ):
         if not Path(model_dir).exists():
             raise FileNotFoundError(f"{model_dir} is not exist")
