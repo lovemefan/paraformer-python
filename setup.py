@@ -57,7 +57,7 @@ setup(
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Science/Research",
         "Operating System :: POSIX :: Linux",
-        "License :: OSI Approved :: Apache Software License",
+        "License :: OSI Approved :: MIT License",
         "Topic :: Multimedia :: Sound/Audio :: Speech",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
         "Topic :: Software Development :: Libraries :: Python Modules",
