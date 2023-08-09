@@ -157,7 +157,7 @@ class OrtInferSession:
 
         if isinstance(model_file, list):
             merged_model_file = b""
-            for file in model_file:
+            for file in sorted(model_file):
                 with open(file, 'rb') as onnx_file:
                     merged_model_file += onnx_file.read()
 
