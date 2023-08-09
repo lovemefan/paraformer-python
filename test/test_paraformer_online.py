@@ -22,5 +22,5 @@ if __name__ == '__main__':
         rec_result = model.infer_online(speech[sample_offset: sample_offset + step], is_final=is_final)
         if len(rec_result) > 0:
            final_result += rec_result
-        print(rec_result)
+        print(rec_result.encode('utf-8').decode('utf-8'))
     print(final_result)
