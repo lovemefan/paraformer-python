@@ -4,7 +4,13 @@
 # @Author    :lovemefan
 # @Email     :lovemefan@outlook.com
 import os
+
+from .runtime.python.fsmnVadInfer import FSMNVadOnline
 from .runtime.python.paraformerInfer import ParaformerOnlineOrtInfer
 from .runtime.python.utils.audioHelper import AudioReader
 
-__all__ = ['ParaformerOnlineOrtInfer', 'AudioReader']
+__all__ = [
+    'ParaformerOnlineOrtInfer',
+    'FSMNVadOnline',
+    'AudioReader'
+]
