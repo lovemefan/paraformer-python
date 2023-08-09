@@ -3,9 +3,12 @@
 # @Time      :2023/8/8 21:03
 # @Author    :lovemefan
 # @Email     :lovemefan@outlook.com
+import sys
+
 from paraformerOnline import AudioReader, ParaformerOnlineOrtInfer
 
 if __name__ == '__main__':
+    sys.setdefaultencoding('utf-8')
     wav_path = 'test/P9_0002.wav'
     speech, sample_rate = AudioReader.read_wav_file(wav_path)
     speech_length = speech.shape[0]
@@ -22,5 +25,5 @@ if __name__ == '__main__':
         rec_result = model.infer_online(speech[sample_offset: sample_offset + step], is_final=is_final)
         if len(rec_result) > 0:
            final_result += rec_result
-        print(rec_result.encode('utf-8').decode('utf-8'))
+        print(rec_result)
     print(final_result)
