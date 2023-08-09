@@ -10,9 +10,10 @@ from typing import List, Tuple, Union
 
 import numpy as np
 
+from paraformerOnline.runtime.python.utils.asrOrtInferRuntimeSession import (
+    AsrOrtInferRuntimeSession, CharTokenizer, Hypothesis, TokenIDConverter,
+    read_yaml)
 from paraformerOnline.runtime.python.utils.audioHelper import AudioReader
-from paraformerOnline.runtime.python.utils.ortruntimeSession import (
-    CharTokenizer, Hypothesis, OrtInferSession, TokenIDConverter, read_yaml)
 from paraformerOnline.runtime.python.utils.postprocess import \
     sentence_postprocess
 from paraformerOnline.runtime.python.utils.preprocess import (
@@ -48,10 +49,10 @@ class ParaformerOnlineModel:
             cmvn_file=cmvn_file, **config["frontend_conf"]
         )
         self.pe = SinusoidalPositionEncoderOnline()
-        self.ort_encoder_infer = OrtInferSession(
+        self.ort_encoder_infer = AsrOrtInferRuntimeSession(
             encoder_model_file, device_id, intra_op_num_threads=intra_op_num_threads
         )
-        self.ort_decoder_infer = OrtInferSession(
+        self.ort_decoder_infer = AsrOrtInferRuntimeSession(
             decoder_model_file, device_id, intra_op_num_threads=intra_op_num_threads
         )
         self.batch_size = batch_size

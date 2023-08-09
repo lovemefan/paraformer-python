@@ -125,7 +125,7 @@ class ONNXRuntimeError(Exception):
     pass
 
 
-class OrtInferSession:
+class AsrOrtInferRuntimeSession:
     def __init__(self, model_file, device_id=-1, intra_op_num_threads=4):
         device_id = str(device_id)
         sess_opt = SessionOptions()

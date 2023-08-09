@@ -3,7 +3,7 @@
 # @Time      :2023/8/8 21:03
 # @Author    :lovemefan
 # @Email     :lovemefan@outlook.com
-from paraformerOnline import ParaformerOnlineOrtInfer, AudioReader
+from paraformerOnline import AudioReader, ParaformerOnlineOrtInfer
 
 if __name__ == '__main__':
     wav_path = 'test/P9_0002.wav'
