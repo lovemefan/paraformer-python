@@ -4,12 +4,10 @@
 # @Author    :lovemefan
 # @Email     :lovemefan@outlook.com
 import logging
-import sys
 
 from paraformerOnline import AudioReader, ParaformerOnlineOrtInfer
 
 if __name__ == '__main__':
-    sys.setdefaultencoding('utf-8')
     wav_path = 'test/P9_0002.wav'
     speech, sample_rate = AudioReader.read_wav_file(wav_path)
     speech_length = speech.shape[0]
