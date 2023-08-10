@@ -1,5 +1,4 @@
 WavFrontend:
-  cmvn_file: onnx/vad/am.mvn
   frontend_conf:
     fs: 16000
     window: hamming
@@ -11,7 +10,6 @@ WavFrontend:
     lfr_n: 1
 
 FSMN:
-    online_model_path: onnx/vad/fsmnvad-online.onnx
     use_cuda: False
     CUDAExecutionProvider:
         device_id: 0

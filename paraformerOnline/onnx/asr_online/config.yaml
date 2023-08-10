@@ -1,122 +1,3 @@
-config: examples/aishell_demo/paraformer_s2/conf/train_asr_paraformer_sanm_50e_16d_2048_512_lfr6.yaml
-print_config: false
-log_level: INFO
-dry_run: false
-iterator_type: sequence
-output_dir: /nfs/FunASR_results/paraformer/1m-1gpu/baseline_train_asr_paraformer_sanm_50e_16d_2048_512_lfr6_fbank_zh_char_local
-ngpu: 1
-seed: 0
-num_workers: 16
-num_att_plot: 3
-dist_backend: nccl
-dist_init_method: file:///nfs/FunASR_results/paraformer/1m-1gpu/baseline_train_asr_paraformer_sanm_50e_16d_2048_512_lfr6_fbank_zh_char_local/ddp_init
-dist_world_size: 1
-dist_rank: 0
-local_rank: 0
-dist_master_addr: null
-dist_master_port: null
-dist_launcher: null
-multiprocessing_distributed: true
-unused_parameters: true
-sharded_ddp: false
-cudnn_enabled: true
-cudnn_benchmark: false
-cudnn_deterministic: true
-collect_stats: false
-write_collected_feats: false
-max_epoch: 20
-patience: null
-val_scheduler_criterion:
-- valid
-- acc
-early_stopping_criterion:
-- valid
-- loss
-- min
-best_model_criterion:
--   - valid
-    - acc
-    - max
-keep_nbest_models: 5
-nbest_averaging_interval: 0
-grad_clip: 5
-grad_clip_type: 2.0
-grad_noise: false
-accum_grad: 1
-no_forward_run: false
-resume: true
-train_dtype: float32
-use_amp: false
-log_interval: 50
-use_matplotlib: true
-use_tensorboard: true
-use_wandb: false
-wandb_project: null
-wandb_id: null
-wandb_entity: null
-wandb_name: null
-wandb_model_log_interval: -1
-detect_anomaly: false
-pretrain_path: null
-init_param:
-- /nfs/init_model/paraformer_9k_bigmodel.pth
-ignore_init_mismatch: false
-freeze_param: []
-num_iters_per_epoch: null
-batch_size: 20
-valid_batch_size: null
-batch_bins: 1000
-valid_batch_bins: null
-train_shape_file:
-- /nfs/dataset/data/asr_stats_fbank_zh_char/train/speech_shape
-- /nfs/dataset/data/asr_stats_fbank_zh_char/train/text_shape.char
-valid_shape_file:
-- /nfs/dataset/data/asr_stats_fbank_zh_char/dev/speech_shape
-- /nfs/dataset/data/asr_stats_fbank_zh_char/dev/text_shape.char
-batch_type: length
-valid_batch_type: null
-fold_length:
-- 512
-- 150
-sort_in_batch: descending
-sort_batch: descending
-multiple_iterator: false
-chunk_length: 500
-chunk_shift_ratio: 0.5
-num_cache_chunks: 1024
-train_data_file: /nfs/dataset/data/dump/fbank/train/ark_txt.scp
-valid_data_file: /nfs/dataset/data/dump/fbank/dev/ark_txt.scp
-train_data_path_and_name_and_type:
--   - /nfs/dataset/data/dump/fbank/train/feats.scp
-    - speech
-    - kaldi_ark
--   - /nfs/dataset/data/dump/fbank/train/text
-    - text
-    - text
-valid_data_path_and_name_and_type:
--   - /nfs/dataset/data/dump/fbank/dev/feats.scp
-    - speech
-    - kaldi_ark
--   - /nfs/dataset/data/dump/fbank/dev/text
-    - text
-    - text
-allow_variable_data_keys: false
-max_cache_size: 0.0
-max_cache_fd: 32
-valid_max_cache_size: null
-optim: adam
-optim_conf:
-    lr: 0.0005
-scheduler: warmuplr
-scheduler_conf:
-    warmup_steps: 30000
-use_pai: false
-num_worker_count: 1
-access_key_id: null
-access_key_secret: null
-endpoint: null
-bucket_name: null
-oss_bucket: null
 token_list:
 - <blank>
 - <s>
@@ -8536,14 +8417,7 @@ token_type: char
 bpemodel: null
 non_linguistic_symbols: null
 cleaner: null
-g2p: null
-speech_volume_normalize: null
-rir_scp: null
-rir_apply_prob: 1.0
-noise_scp: null
-noise_apply_prob: 1.0
-noise_db_range: '13_15'
-frontend: wav_frontend
+
 frontend_conf:
     fs: 16000
     window: hamming
@@ -8552,6 +8426,8 @@ frontend_conf:
     frame_shift: 10
     lfr_m: 7
     lfr_n: 6
+
+
 specaug: specaug_lfr
 specaug_conf:
     apply_time_warp: false
