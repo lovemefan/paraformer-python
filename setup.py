@@ -19,7 +19,7 @@ requirements = {
         "setuptools<=65.0",
         "kaldi_native_fbank",
         "PyYAML",
-        "onnxruntime==1.14.1",
+        "onnxruntime",
         "jieba"
     ],
     "setup": [
