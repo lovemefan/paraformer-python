@@ -13,7 +13,7 @@ Furthermore, the interface service for Paraformer is available in another projec
   * [x] vad model onnx inference
   * [x] punctuation model onnx inference
   * [x] streaming asr onnx inference
-  * [ ] non-streaming asr onnx inference
+  * [x] non-streaming asr onnx inference
   * [ ] speaker recognition onnx inference
   * [ ] model integration, streaming and non-streaming 2-pass model inference with speaker verification
 

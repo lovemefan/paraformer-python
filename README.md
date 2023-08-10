@@ -1,4 +1,7 @@
-# Paraformer online python
+<br/>
+<h2 align="center">Paraformer online python</h2>
+<br/>
+
 [English readme](README-EN.md)
 
 Paraformer是达摩院语音团队提出的一种高效的非自回归端到端语音识别框架，多个公开数据集上取得SOTA效果，缺点是该模型没有标点符号。
@@ -15,9 +18,9 @@ Paraformer是达摩院语音团队提出的一种高效的非自回归端到端�
   * [x] vad模型onnx推理
   * [x] 标点模型onnx推理
   * [x] 流式asr onnx推理
-  * [ ] 非流式asr onnx推理
+  * [x] 非流式asr onnx推理
   * [ ] 说话人识别 onnx推理
-  * [ ]  模型整合，流式模型非流式 2pass 带有说话人验证的模型推理
+  * [ ] 模型整合，流式模型非流式 2pass 带有说话人验证的模型推理
 
 
 ## CER
