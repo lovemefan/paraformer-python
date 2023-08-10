@@ -22,13 +22,16 @@ from typing import Tuple, Union
 import numpy as np
 
 from paraformerOnline.runtime.python.model.vad.fsmnvad import E2EVadModel
-from paraformerOnline.runtime.python.utils.asrOrtInferRuntimeSession import \
-    read_yaml
+from paraformerOnline.runtime.python.utils.asrOrtInferRuntimeSession import read_yaml
 from paraformerOnline.runtime.python.utils.audioHelper import AudioReader
 from paraformerOnline.runtime.python.utils.preprocess import (
-    WavFrontend, WavFrontendOnline)
+    WavFrontend,
+    WavFrontendOnline,
+)
 
-root_dir = Path(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+root_dir = Path(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+)
 
 
 class FSMNVad(object):
@@ -66,24 +69,28 @@ class FSMNVad(object):
         else:
             raise FileNotFoundError(str(Path))
         assert (
-                _sample_rate == 16000
+            _sample_rate == 16000
         ), f"only support 16k sample rate, current sample rate is {_sample_rate}"
 
         feats, feats_len = self.extract_feature(waveform)
         waveform = waveform[None, ...]
-        segments_part, in_cache = self.vad.infer_offline(feats[None, ...], waveform, is_final=True)
+        segments_part, in_cache = self.vad.infer_offline(
+            feats[None, ...], waveform, is_final=True
+        )
         return segments_part[0]
 
 
 class FSMNVadOnline(FSMNVad):
     def __init__(self, config_path=None):
         project_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-        config_path = config_path or os.path.join(project_dir, 'onnx', 'vad', 'config.yaml')
+        config_path = config_path or os.path.join(
+            project_dir, "onnx", "vad", "config.yaml"
+        )
         super(FSMNVadOnline, self).__init__(config_path)
         self.in_cache = None
 
     def extract_feature(
-            self, waveforms: np.ndarray, is_final: bool = False
+        self, waveforms: np.ndarray, is_final: bool = False
     ) -> Tuple[np.ndarray, np.ndarray]:
         waveforms_lens = np.zeros(waveforms.shape[0]).astype(np.int32)
         for idx, waveform in enumerate(waveforms):
@@ -108,9 +115,9 @@ class FSMNVadOnline(FSMNVad):
             in_cache.append(cache)
         return in_cache
 
-    def segments_online(self, waveform: Union[str, np.ndarray],
-                        sample_rate=16000,
-                        is_final=False):
+    def segments_online(
+        self, waveform: Union[str, np.ndarray], sample_rate=16000, is_final=False
+    ):
         """get sements of audio"""
 
         if self.in_cache is None:
@@ -120,24 +127,20 @@ class FSMNVadOnline(FSMNVad):
             waveform = AudioReader.read_pcm_byte(waveform)
 
         assert (
-                sample_rate == 16000
+            sample_rate == 16000
         ), f"only support 16k sample rate, current sample rate is {sample_rate}"
         if waveform.ndim == 1:
             waveform = waveform[None, ...]
         feats, feats_len = self.extract_feature(waveform)
         waveform = self.frontend.get_waveforms()
-        segments_part, self.in_cache = self.vad.infer_online(feats,
-                                                             waveform,
-                                                             self.prepare_cache(self.in_cache),
-                                                             is_final=is_final)
+        segments_part, self.in_cache = self.vad.infer_online(
+            feats, waveform, self.prepare_cache(self.in_cache), is_final=is_final
+        )
         return segments_part
 
-    def get_current_state(self,
-                          waveform: Union[str, np.ndarray],
-                          sample_rate=16000,
-                          is_final=False
-                          ):
-
+    def get_current_state(
+        self, waveform: Union[str, np.ndarray], sample_rate=16000, is_final=False
+    ):
         if self.in_cache is None:
             self.in_cache = []
 
@@ -145,14 +148,13 @@ class FSMNVadOnline(FSMNVad):
             waveform = AudioReader.read_pcm_byte(waveform)
 
         assert (
-                sample_rate == 16000
+            sample_rate == 16000
         ), f"only support 16k sample rate, current sample rate is {sample_rate}"
         if waveform.ndim == 1:
             waveform = waveform[None, ...]
         feats, feats_len = self.extract_feature(waveform)
         waveform = self.frontend.get_waveforms()
-        pre_state, cur_state = self.vad.get_frames_state(feats,
-                                                         waveform,
-                                                         self.prepare_cache(self.in_cache),
-                                                         is_final=is_final)
+        pre_state, cur_state = self.vad.get_frames_state(
+            feats, waveform, self.prepare_cache(self.in_cache), is_final=is_final
+        )
         return pre_state, cur_state

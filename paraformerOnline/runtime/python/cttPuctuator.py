@@ -3,7 +3,10 @@
 # @Time      :2023/8/9 21:47
 # @Author    :lovemefan
 # @Email     :lovemefan@outlook.com
-from paraformerOnline.runtime.python.model.punc.punctuator import CT_Transformer_VadRealtime, CT_Transformer
+from paraformerOnline.runtime.python.model.punc.punctuator import (
+    CT_Transformer,
+    CT_Transformer_VadRealtime,
+)
 from paraformerOnline.runtime.python.utils.logger import logger
 
 
@@ -25,7 +28,6 @@ class CttPunctuator:
             self.model = CT_Transformer()
             logger.info("Offline model initialized.")
 
-
         logger.info("Punc Model initialized.")
 
     def punctuate(self, text: str, param_dict=None):
@@ -34,4 +36,3 @@ class CttPunctuator:
             return self.model(text, self.param_dict)
         else:
             return self.model(text)
-

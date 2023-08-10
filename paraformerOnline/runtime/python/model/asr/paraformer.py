@@ -11,13 +11,20 @@ from typing import List, Tuple, Union
 import numpy as np
 
 from paraformerOnline.runtime.python.utils.asrOrtInferRuntimeSession import (
-    AsrOrtInferRuntimeSession, CharTokenizer, Hypothesis, TokenIDConverter,
-    read_yaml)
+    AsrOfflineOrtInferRuntimeSession,
+    AsrOnlineOrtInferRuntimeSession,
+    CharTokenizer,
+    Hypothesis,
+    TokenIDConverter,
+    read_yaml,
+)
 from paraformerOnline.runtime.python.utils.audioHelper import AudioReader
-from paraformerOnline.runtime.python.utils.postprocess import \
-    sentence_postprocess
+from paraformerOnline.runtime.python.utils.postprocess import sentence_postprocess
 from paraformerOnline.runtime.python.utils.preprocess import (
-    SinusoidalPositionEncoderOnline, WavFrontendOnline)
+    SinusoidalPositionEncoderOnline,
+    WavFrontend,
+    WavFrontendOnline,
+)
 
 
 class ParaformerOnlineModel:
@@ -36,7 +43,9 @@ class ParaformerOnlineModel:
         encoder_model_file = os.path.join(model_dir, "model.onnx")
         decoder_model_file = os.path.join(model_dir, "decoder.onnx")
         if quantize:
-            encoder_model_file = glob.glob(os.path.join(model_dir, "model_quant_*.onnx"))
+            encoder_model_file = glob.glob(
+                os.path.join(model_dir, "model_quant_*.onnx")
+            )
             decoder_model_file = os.path.join(model_dir, "decoder_quant.onnx")
 
         config_file = os.path.join(model_dir, "config.yaml")
@@ -49,10 +58,10 @@ class ParaformerOnlineModel:
             cmvn_file=cmvn_file, **config["frontend_conf"]
         )
         self.pe = SinusoidalPositionEncoderOnline()
-        self.ort_encoder_infer = AsrOrtInferRuntimeSession(
+        self.ort_encoder_infer = AsrOnlineOrtInferRuntimeSession(
             encoder_model_file, device_id, intra_op_num_threads=intra_op_num_threads
         )
-        self.ort_decoder_infer = AsrOrtInferRuntimeSession(
+        self.ort_decoder_infer = AsrOnlineOrtInferRuntimeSession(
             decoder_model_file, device_id, intra_op_num_threads=intra_op_num_threads
         )
         self.batch_size = batch_size
@@ -94,7 +103,7 @@ class ParaformerOnlineModel:
         # process last chunk
         overlap_feats = np.concatenate((cache["feats"], feats), axis=1)
         if cache["is_final"]:
-            cache["feats"] = overlap_feats[:, -self.chunk_size[0]:, :]
+            cache["feats"] = overlap_feats[:, -self.chunk_size[0] :, :]
             if not cache["last_chunk"]:
                 padding_length = sum(self.chunk_size) - overlap_feats.shape[1]
                 overlap_feats = np.pad(
@@ -102,7 +111,7 @@ class ParaformerOnlineModel:
                 )
         else:
             cache["feats"] = overlap_feats[
-                :, -(self.chunk_size[0] + self.chunk_size[2]):, :
+                :, -(self.chunk_size[0] + self.chunk_size[2]) :, :
             ]
         return overlap_feats
 
@@ -148,7 +157,7 @@ class ParaformerOnlineModel:
                             :,
                             -(
                                 feats.shape[1] + self.chunk_size[2] - self.chunk_size[1]
-                            ):,
+                            ) :,
                             :,
                         ],
                         cache,
@@ -194,7 +203,7 @@ class ParaformerOnlineModel:
                 dec_output[2:],
             )
             cache["decoder_fsmn"] = [
-                item[:, :, -self.fsmn_lorder:] for item in cache["decoder_fsmn"]
+                item[:, :, -self.fsmn_lorder :] for item in cache["decoder_fsmn"]
             ]
 
             preds = self.decode(logits, acoustic_embeds_len)
@@ -269,7 +278,7 @@ class ParaformerOnlineModel:
         cache_alphas = []
         cache_hiddens = []
         alphas[:, : self.chunk_size[0]] = 0.0
-        alphas[:, sum(self.chunk_size[:2]):] = 0.0
+        alphas[:, sum(self.chunk_size[:2]) :] = 0.0
         if cache is not None and "cif_alphas" in cache and "cif_hidden" in cache:
             hidden = np.concatenate((cache["cif_hidden"], hidden), axis=1)
             alphas = np.concatenate((cache["cif_alphas"], alphas), axis=1)
@@ -329,3 +338,82 @@ class ParaformerOnlineModel:
         return np.stack(list_ls, axis=0).astype(np.float32), np.stack(
             token_length, axis=0
         ).astype(np.int32)
+
+
+class ParaformerOfflineModel:
+    def __init__(self, model_dir: str = None, intra_op_num_threads=4) -> None:
+        config_path = os.path.join(model_dir, "config.yaml")
+
+        config = read_yaml(config_path)
+
+        self.converter = TokenIDConverter(config["token_list"])
+        self.tokenizer = CharTokenizer(**config["CharTokenizer"])
+        self.frontend = WavFrontend(
+            cmvn_file=os.path.join(model_dir, "am.mvn"), **config["frontend_conf"]
+        )
+        if os.path.exists(os.path.join(model_dir, "model_quant.onnx")):
+            model_file = os.path.join(model_dir, "model_quant.onnx")
+        else:
+            model_file = glob.glob(os.path.join(model_dir, "model_quant_*.onnx"))
+
+        self.ort_infer = AsrOfflineOrtInferRuntimeSession(
+            model_file, intra_op_num_threads=intra_op_num_threads
+        )
+
+    def extract_feat(self, waveforms: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+        fbank, fbank_len = self.frontend.fbank(waveforms)
+        feats, feats_len = self.frontend.lfr_cmvn(fbank)
+
+        return feats.astype(np.float32), feats_len.astype(np.int32)
+
+    async def transcribe(self, audio: Union[np.ndarray]):
+        waveform = audio[None, ...]
+        feats, feats_len = self.extract_feat(waveform)
+        am_scores = self.ort_infer(input_content=[feats, feats_len])
+
+        results = []
+        for am_score in am_scores:
+            pred_res = await self.infer_one_feat(am_score)
+            results.append(pred_res)
+        return results
+
+    def infer(self, audio: Union[str, np.ndarray, bytes]):
+        def infer_one_feat_without_async(am_score):
+            yseq = am_score.argmax(axis=-1)
+            score = am_score.max(axis=-1)
+            score = np.sum(score, axis=-1)
+
+            # pad with mask tokens to ensure compatibility with sos/eos tokens
+            # asr_model.sos:1  asr_model.eos:2
+            yseq = np.array([1] + yseq.tolist() + [2])
+            hyp = Hypothesis(yseq=yseq, score=score)
+            # remove sos/eos and get results
+            last_pos = -1
+            token_int = hyp.yseq[1:last_pos].tolist()
+
+            # remove blank symbol id, which is assumed to be 0
+            token_int = list(filter(lambda x: x not in (0, 2), token_int))
+
+            # Change integer-ids to tokens
+            token = self.converter.ids2tokens(token_int)
+            texts = sentence_postprocess(token)
+            return texts
+
+        if isinstance(audio, str):
+            audio, _ = AudioReader.read_wav_file(audio)
+        elif isinstance(audio, bytes):
+            audio, _ = AudioReader.read_wav_bytes(audio)
+
+        feats, feats_len = self.extract_feat(audio)
+        if feats_len > 0:
+            am_scores = self.ort_infer(
+                input_content=[feats[None, ...], feats_len[None, ...]]
+            )
+        else:
+            am_scores = []
+
+        results = []
+        for am_score in am_scores:
+            pred_res = infer_one_feat_without_async(am_score)
+            results.append(pred_res)
+        return results if len(results) != 0 else [[""]]

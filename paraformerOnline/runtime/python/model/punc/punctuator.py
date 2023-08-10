@@ -9,10 +9,17 @@ from typing import Tuple, Union
 
 import numpy as np
 
+from paraformerOnline.runtime.python.utils.asrOrtInferRuntimeSession import (
+    TokenIDConverter,
+    code_mix_split_words,
+    read_yaml,
+    split_to_mini_sentence,
+)
 from paraformerOnline.runtime.python.utils.logger import logger
-from paraformerOnline.runtime.python.utils.puncOrtInferRuntimeSession import PuncOrtInferRuntimeSession, ONNXRuntimeError
-from paraformerOnline.runtime.python.utils.asrOrtInferRuntimeSession import read_yaml, TokenIDConverter, \
-    code_mix_split_words, split_to_mini_sentence
+from paraformerOnline.runtime.python.utils.puncOrtInferRuntimeSession import (
+    ONNXRuntimeError,
+    PuncOrtInferRuntimeSession,
+)
 
 
 class CT_Transformer:
@@ -31,27 +38,31 @@ class CT_Transformer:
         quantize: bool = True,
         intra_op_num_threads: int = 4,
     ):
-        project_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
-        model_dir = model_dir or os.path.join(project_dir, 'onnx', 'punc')
+        project_dir = os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+        )
+        model_dir = model_dir or os.path.join(project_dir, "onnx", "punc")
 
         if model_dir is None or not Path(model_dir).exists():
             raise FileNotFoundError(f"{model_dir} does not exist.")
 
-        if not os.path.exists(os.path.join(model_dir, 'model_quant.onnx')):
+        if not os.path.exists(os.path.join(model_dir, "model_quant.onnx")):
             model_file = glob.glob(os.path.join(model_dir, "model_quant_*.onnx"))
             # model_file = b""
             # for file in sorted(model_files):
             #     with open(file, 'rb') as model_split:
             #         model_file += model_split.read()
         else:
-            model_file = os.path.join(model_dir, 'model_quant.onnx')
+            model_file = os.path.join(model_dir, "model_quant.onnx")
 
-        config_file = os.path.join(model_dir, "config.bin")
+        config_file = os.path.join(model_dir, "config.pkl")
         logger.info(f"Loading config file {config_file}")
         start = time.time()
-        with open(config_file, 'rb') as file:
+        with open(config_file, "rb") as file:
             config = pickle.load(file)
-        logger.info(f"Loading config file {config_file} finished, takes {time.time() - start} s")
+        logger.info(
+            f"Loading config file {config_file} finished, takes {time.time() - start} s"
+        )
         self.converter = TokenIDConverter(config["token_list"])
         self.ort_infer = PuncOrtInferRuntimeSession(
             model_file, device_id, intra_op_num_threads=intra_op_num_threads
@@ -157,7 +168,7 @@ class CT_Transformer:
     def infer(
         self, feats: np.ndarray, feats_len: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:
-        outputs = self.ort_infer([feats.astype('int32'), feats_len])
+        outputs = self.ort_infer([feats.astype("int32"), feats_len])
         return outputs
 
 
@@ -319,5 +330,7 @@ class CT_Transformer_VadRealtime(CT_Transformer):
         vad_mask: np.ndarray,
         sub_masks: np.ndarray,
     ) -> Tuple[np.ndarray, np.ndarray]:
-        outputs = self.ort_infer([feats.astype('int32'), feats_len, vad_mask, sub_masks])
+        outputs = self.ort_infer(
+            [feats.astype("int32"), feats_len, vad_mask, sub_masks]
+        )
         return outputs
