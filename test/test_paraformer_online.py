@@ -3,6 +3,7 @@
 # @Time      :2023/8/8 21:03
 # @Author    :lovemefan
 # @Email     :lovemefan@outlook.com
+import logging
 import sys
 
 from paraformerOnline import AudioReader, ParaformerOnlineOrtInfer
@@ -25,5 +26,5 @@ if __name__ == '__main__':
         rec_result = model.infer_online(speech[sample_offset: sample_offset + step], is_final=is_final)
         if len(rec_result) > 0:
            final_result += rec_result
-        print(rec_result)
-    print(final_result)
+        logging.info(rec_result)
+    logging.info(final_result)
