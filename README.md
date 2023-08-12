@@ -11,7 +11,7 @@ Paraformer是达摩院语音团队提出的一种高效的非自回归端到端�
 
 本项目为Paraformer封装，基于onnxruntime的推理包，代码主要来自[Funasr](https://github.com/alibaba-damo-academy/FunASR)官方
 
-另外praformer的接口服务在另一个项目[Parafirner-webserver](https://github.com/lovemefan/Paraformer-webserver)中
+另外praformer的接口服务在另一个项目[Paraformer-webserver](https://github.com/lovemefan/Paraformer-webserver)中
 
 ## 目前的进度
 * [2023年8月10日] 
