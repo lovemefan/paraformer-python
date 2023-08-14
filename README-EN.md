@@ -14,8 +14,8 @@ Furthermore, the interface service for Paraformer is available in another projec
   * [x] punctuation model onnx inference
   * [x] streaming asr onnx inference
   * [x] non-streaming asr onnx inference
-  * [ ] speaker recognition onnx inference
-  * [ ] model integration, streaming and non-streaming 2-pass model inference with speaker verification
+  * [x] speaker recognition onnx inference
+  * [x] model integration, streaming and non-streaming 2-pass model inference with speaker verification
 
 ## CER
 To be tested...
