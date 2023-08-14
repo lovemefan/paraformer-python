@@ -8,6 +8,11 @@ import logging
 from paraformerOnline.runtime.python.asr_all_in_one import AsrAllInOne
 from paraformerOnline.runtime.python.utils.audioHelper import AudioReader
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="[%(asctime)s %(levelname)s] [%(filename)s:%(lineno)d %(module)s.%(funcName)s] %(message)s",
+)
+
 if __name__ == "__main__":
     logging.info("Testing online asr")
     wav_path = "test/vad_example.wav"
@@ -30,4 +35,4 @@ if __name__ == "__main__":
             speech[sample_offset: sample_offset + step], is_final=is_final
         )
 
-        print(rec_result)
+        logging.info(rec_result)
