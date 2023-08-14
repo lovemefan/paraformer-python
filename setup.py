@@ -20,7 +20,7 @@ requirements = {
         "kaldi_native_fbank",
         "PyYAML",
         "onnxruntime",
-        "jieba"
+        "jieba",
     ],
     "setup": [
         "numpy==1.24.2",

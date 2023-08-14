@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Tuple
 
 import numpy as np
 
+from paraformerOnline.runtime.python.utils.logger import logger
 from paraformerOnline.runtime.python.utils.vadOrtInferRuntimeSession import (
     VadOrtInferRuntimeSession,
 )
@@ -355,7 +356,7 @@ class E2EVadModel:
                     self.data_buf_start_frame
                     * int(
                         self.vad_opts.frame_in_ms * self.vad_opts.sample_rate / 1000
-                    ) :
+                    ):
                 ]
 
     def pop_data_to_output_buf(
@@ -641,6 +642,7 @@ class E2EVadModel:
         max_end_sil: int = 800,
     ):
         feats = [feats]
+        states = []
         if in_cache is None:
             in_cache = []
 
@@ -652,15 +654,22 @@ class E2EVadModel:
         in_cache = self.compute_scores(feats)
         self.compute_decibel()
 
-        if is_final:
-            self.detect_last_frames()
-        else:
-            self.detect_common_frames()
+        if self.vad_state_machine == VadStateMachine.kVadInStateEndPointDetected:
+            return states
 
-        return (
-            self.windows_detector.pre_frame_state,
-            self.windows_detector.cur_frame_state,
-        )
+        for i in range(self.vad_opts.nn_eval_block_size - 1, -1, -1):
+            frame_state = FrameState.kFrameStateInvalid
+            frame_state = self.get_frame_state(self.frm_cnt - 1 - i)
+            states.append(frame_state)
+            if i == 0 and is_final:
+                logger.info('last frame detected')
+                self.detect_one_frame(frame_state, self.frm_cnt - 1, True)
+            else:
+                self.detect_one_frame(frame_state, self.frm_cnt - 1 - i, False)
+
+        return states
+
+
 
     def detect_common_frames(self) -> int:
         if self.vad_state_machine == VadStateMachine.kVadInStateEndPointDetected:

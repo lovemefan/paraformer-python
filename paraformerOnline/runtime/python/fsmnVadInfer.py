@@ -35,13 +35,13 @@ root_dir = Path(
 
 
 class FSMNVad(object):
-    def __init__(self, config_path=root_dir / "onnx//vad/config.yaml"):
+    def __init__(self, config_path=root_dir / "onnx/vad/config.yaml"):
         self.config = read_yaml(config_path)
         self.frontend = WavFrontendOnline(
-            cmvn_file=root_dir / self.config["WavFrontend"]["cmvn_file"],
+            cmvn_file=root_dir / "onnx/vad/am.mvn",
             **self.config["WavFrontend"]["frontend_conf"],
         )
-        self.config["FSMN"]["model_path"] = self.config["FSMN"]["online_model_path"]
+        self.config["FSMN"]["model_path"] = root_dir / "onnx/vad/fsmnvad-online.onnx"
 
         self.vad = E2EVadModel(
             self.config["FSMN"], self.config["vadPostArgs"], root_dir
@@ -154,7 +154,7 @@ class FSMNVadOnline(FSMNVad):
             waveform = waveform[None, ...]
         feats, feats_len = self.extract_feature(waveform)
         waveform = self.frontend.get_waveforms()
-        pre_state, cur_state = self.vad.get_frames_state(
+        states = self.vad.get_frames_state(
             feats, waveform, self.prepare_cache(self.in_cache), is_final=is_final
         )
-        return pre_state, cur_state
+        return states
