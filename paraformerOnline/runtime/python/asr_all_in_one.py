@@ -23,7 +23,7 @@ class AsrAllInOne:
         speaker_verification=False,
         time_stamp=False,
         sv_model_name="cam++",
-        sv_threshold=0.8,
+        sv_threshold=0.6,
     ):
         """
         Args:
@@ -91,6 +91,8 @@ class AsrAllInOne:
             if buffer is not None:
                 time_start = time.time()
                 asr_offline_final = self.asr_offline.infer_offline(buffer)
+                if self.speaker_verification:
+                    speaker_id = self.sv.recognize(buffer)
                 logger.debug(f"asr offline inference use {time.time() - time_start} s")
                 time_start = time.time()
                 final = self.punc.punctuate(asr_offline_final)[0]
@@ -104,6 +106,8 @@ class AsrAllInOne:
         if final is not None:
             result["final"] = final
             result['partial'] = ''
+            if self.speaker_verification:
+                result['speaker_id'] = speaker_id
             self.text_cache = ""
 
         return result

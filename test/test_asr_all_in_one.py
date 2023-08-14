@@ -20,7 +20,7 @@ if __name__ == "__main__":
     speech_length = speech.shape[0]
     sample_offset = 0
     step = 10 * 960
-    model = AsrAllInOne(mode="2pass")
+    model = AsrAllInOne(mode="2pass", speaker_verification=True)
 
     final_result = ""
     for sample_offset in range(
