@@ -47,9 +47,11 @@ class Campplus:
             )
         )
 
-    def extract_feature(self, audio: Union[str, Path, bytes]):
+    def extract_feature(self, audio: Union[str, Path, bytes], sample_rate=16000):
         if isinstance(audio, str) or isinstance(audio, Path):
             waveform, sample_rate = AudioReader.read_wav_file(audio)
+        elif isinstance(audio, np.ndarray):
+            waveform = audio
         opts = knf.FbankOptions()
         opts.frame_opts.samp_freq = float(sample_rate)
         opts.frame_opts.dither = 0.0
