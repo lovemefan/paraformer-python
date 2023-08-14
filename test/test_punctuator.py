@@ -34,7 +34,8 @@ vads = text_in.split("|")
 rec_result_all = ""
 for vad in vads:
     result = punc.punctuate(vad)
-    rec_result_all += result[0]
-    logger.info(f"Part: {rec_result_all}")
 
-logger.info(f"Final: {rec_result_all}")
+    logger.info(f"Part: {result[0]}")
+    rec_result_all += result[0]
+    logger.info(f"Final: {rec_result_all}")
+
