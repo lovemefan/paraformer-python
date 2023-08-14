@@ -3,11 +3,6 @@
 # @Time      :2023/8/9 21:43
 # @Author    :lovemefan
 # @Email     :lovemefan@outlook.com
-# -*- coding:utf-8 -*-
-# @FileName  :test.py.py
-# @Time      :2023/4/19 13:39
-# @Author    :lovemefan
-# @Email     :lovemefan@outlook.com
 
 
 from paraformerOnline import CttPunctuator

@@ -3,6 +3,8 @@
 # @Time      :2023/8/14 09:31
 # @Author    :lovemefan
 # @Email     :lovemefan@outlook.com
+import time
+
 import numpy as np
 
 from paraformerOnline import (CttPunctuator, FSMNVadOnline, ParaformerOffline,
@@ -47,6 +49,7 @@ class AsrAllInOne:
             self.asr_online = ParaformerOnline()
             self.vad = FSMNVadOnline()
             self.punc = CttPunctuator(online=True)
+            self.text_cache = ""
         elif mode == "file_transcription":
             pass
 
@@ -62,11 +65,17 @@ class AsrAllInOne:
         return self.asr_offline.infer_offline(audio_data)
 
     def two_pass_asr(self, chunk: np.ndarray, is_final: bool = False):
-        if len(chunk) != 9600:
-            logger.warn(f"The recommended length of the chunk is 60 ms")
+
+        time_start = time.time()
         partial = self.asr_online.infer_online(chunk, is_final)
+        self.text_cache += partial
+        logger.debug(f"asr online inference use {time.time() - time_start} s")
         final = None
+        time_start = time.time()
         segments_result = self.vad.segments_online(chunk, is_final=is_final)
+        logger.debug(f"vad online inference use {time.time() - time_start} s")
+        # if is_final:
+        #     buffer = self.vad.vad.data_buf_all[self.start_frame:]
         if segments_result:
             self.start_frame = self.end_frame
             self.end_frame = self.vad.vad.data_buf_start_frame * int(
@@ -74,18 +83,27 @@ class AsrAllInOne:
                 * self.vad.vad.vad_opts.sample_rate
                 / 1000
             )
-            if self.end_frame is not None:
-                buffer = self.vad.vad.data_buf_all[self.start_frame : self.end_frame]
+            if is_final:
+                buffer = self.vad.vad.data_buf_all[self.start_frame:]
             else:
-                buffer = self.vad.vad.data_buf_all[self.start_frame :]
+                buffer = self.vad.vad.data_buf_all[self.start_frame: self.end_frame]
 
             if buffer is not None:
-                final = self.punc.punctuate(self.asr_offline.infer_offline(buffer))[0]
+                time_start = time.time()
+                asr_offline_final = self.asr_offline.infer_offline(buffer)
+                logger.debug(f"asr offline inference use {time.time() - time_start} s")
+                time_start = time.time()
+                final = self.punc.punctuate(asr_offline_final)[0]
+                logger.debug(f"punc online inference use {time.time() - time_start} s")
+        if is_final:
+            self.vad.vad.all_reset_detection()
 
         result = {
-            "partial": partial,
+            "partial": self.text_cache,
         }
         if final is not None:
             result["final"] = final
+            result['partial'] = ''
+            self.text_cache = ""
 
         return result

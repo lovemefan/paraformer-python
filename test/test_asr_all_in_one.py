@@ -27,6 +27,7 @@ if __name__ == "__main__":
         else:
             is_final = False
         rec_result = model.two_pass_asr(
-            speech[sample_offset : sample_offset + step], is_final=is_final
+            speech[sample_offset: sample_offset + step], is_final=is_final
         )
+
         print(rec_result)

@@ -627,9 +627,7 @@ class E2EVadModel:
                             self.output_data_buf[i].end_ms,
                         ]
                         segments.append(segment)
-        if is_final:
-            # reset class variables and clear the dict for the next query
-            self.all_reset_detection()
+
         return segments, in_cache
 
     def get_frames_state(
