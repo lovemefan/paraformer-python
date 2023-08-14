@@ -2,3 +2,13 @@ include paraformerOnline/onnx/asr_offline/config.yaml
 include paraformerOnline/onnx/asr_offline/configuration.yaml
 include paraformerOnline/onnx/asr_offline/am.mvn
 include paraformerOnline/onnx/asr_offline/*.onnx
+include paraformerOnline/onnx/asr_online/am.mvn
+include paraformerOnline/onnx/asr_online/config.yaml
+include paraformerOnline/onnx/asr_online/*.onnx
+include paraformerOnline/onnx/punc/config.pkl
+include paraformerOnline/onnx/punc/*.onnx
+include paraformerOnline/onnx/sv/campplus.onnx
+include paraformerOnline/onnx/vad/am.mvn
+include paraformerOnline/onnx/vad/config.yaml
+include paraformerOnline/onnx/vad/*.onnx
+
