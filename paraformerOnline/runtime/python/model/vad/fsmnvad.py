@@ -12,9 +12,8 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 
 from paraformerOnline.runtime.python.utils.logger import logger
-from paraformerOnline.runtime.python.utils.vadOrtInferRuntimeSession import (
-    VadOrtInferRuntimeSession,
-)
+from paraformerOnline.runtime.python.utils.vadOrtInferRuntimeSession import \
+    VadOrtInferRuntimeSession
 
 
 class VadStateMachine(Enum):
@@ -356,7 +355,7 @@ class E2EVadModel:
                     self.data_buf_start_frame
                     * int(
                         self.vad_opts.frame_in_ms * self.vad_opts.sample_rate / 1000
-                    ):
+                    ) :
                 ]
 
     def pop_data_to_output_buf(
@@ -613,7 +612,7 @@ class E2EVadModel:
                         and not self.output_data_buf[i].contain_seg_end_point
                     ):
                         continue
-                    start_ms = self.output_data_buf[i].start_ms
+                    # start_ms = self.output_data_buf[i].start_ms
                     if self.output_data_buf[i].contain_seg_end_point:
                         end_ms = self.output_data_buf[i].end_ms
                         self.next_seg = True
@@ -662,14 +661,12 @@ class E2EVadModel:
             frame_state = self.get_frame_state(self.frm_cnt - 1 - i)
             states.append(frame_state)
             if i == 0 and is_final:
-                logger.info('last frame detected')
+                logger.info("last frame detected")
                 self.detect_one_frame(frame_state, self.frm_cnt - 1, True)
             else:
                 self.detect_one_frame(frame_state, self.frm_cnt - 1 - i, False)
 
         return states
-
-
 
     def detect_common_frames(self) -> int:
         if self.vad_state_machine == VadStateMachine.kVadInStateEndPointDetected:

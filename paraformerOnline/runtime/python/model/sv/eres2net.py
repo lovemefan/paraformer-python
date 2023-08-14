@@ -20,5 +20,3 @@ class Eres2net(Campplus):
         self.output_name = [nd.name for nd in self.sess.get_outputs()]
         self.threshhold = threshold
         self.memory: np.ndarray = None
-
-

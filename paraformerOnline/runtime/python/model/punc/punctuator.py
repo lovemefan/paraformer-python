@@ -10,16 +10,10 @@ from typing import Tuple, Union
 import numpy as np
 
 from paraformerOnline.runtime.python.utils.asrOrtInferRuntimeSession import (
-    TokenIDConverter,
-    code_mix_split_words,
-    read_yaml,
-    split_to_mini_sentence,
-)
+    TokenIDConverter, code_mix_split_words, split_to_mini_sentence)
 from paraformerOnline.runtime.python.utils.logger import logger
 from paraformerOnline.runtime.python.utils.puncOrtInferRuntimeSession import (
-    ONNXRuntimeError,
-    PuncOrtInferRuntimeSession,
-)
+    ONNXRuntimeError, PuncOrtInferRuntimeSession)
 
 
 class CT_Transformer:

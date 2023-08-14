@@ -5,7 +5,7 @@
 # @Email     :lovemefan@outlook.com
 import os
 
-from .runtime.python.cttPuctuator import CttPunctuator
+from .runtime.python.cttPunctuator import CttPunctuator
 from .runtime.python.fsmnVadInfer import FSMNVadOnline
 from .runtime.python.paraformerInfer import ParaformerOffline, ParaformerOnline
 from .runtime.python.utils.audioHelper import AudioReader

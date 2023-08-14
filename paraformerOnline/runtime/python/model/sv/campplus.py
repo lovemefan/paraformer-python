@@ -2,9 +2,10 @@ import os
 from pathlib import Path
 from typing import Union
 
+import kaldi_native_fbank as knf
 import numpy as np
 import onnxruntime
-import kaldi_native_fbank as knf
+
 from paraformerOnline.runtime.python.utils.audioHelper import AudioReader
 
 

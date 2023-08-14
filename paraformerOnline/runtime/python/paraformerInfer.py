@@ -8,9 +8,7 @@ import os.path
 import numpy as np
 
 from paraformerOnline.runtime.python.model.asr.paraformer import (
-    ParaformerOfflineModel,
-    ParaformerOnlineModel,
-)
+    ParaformerOfflineModel, ParaformerOnlineModel)
 from paraformerOnline.runtime.python.utils.logger import logger
 
 
@@ -41,7 +39,7 @@ class ParaformerOnline:
         self.param_dict["is_final"] = is_final
         result = self.model(audio_in=chunk, param_dict=self.param_dict)
 
-        return result[0]["preds"][0] if len(result) > 0 else ''
+        return result[0]["preds"][0] if len(result) > 0 else ""
 
 
 class ParaformerOffline:

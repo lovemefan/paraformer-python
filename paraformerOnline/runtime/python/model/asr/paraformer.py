@@ -11,20 +11,13 @@ from typing import List, Tuple, Union
 import numpy as np
 
 from paraformerOnline.runtime.python.utils.asrOrtInferRuntimeSession import (
-    AsrOfflineOrtInferRuntimeSession,
-    AsrOnlineOrtInferRuntimeSession,
-    CharTokenizer,
-    Hypothesis,
-    TokenIDConverter,
-    read_yaml,
-)
+    AsrOfflineOrtInferRuntimeSession, AsrOnlineOrtInferRuntimeSession,
+    CharTokenizer, Hypothesis, TokenIDConverter, read_yaml)
 from paraformerOnline.runtime.python.utils.audioHelper import AudioReader
-from paraformerOnline.runtime.python.utils.postprocess import sentence_postprocess
+from paraformerOnline.runtime.python.utils.postprocess import \
+    sentence_postprocess
 from paraformerOnline.runtime.python.utils.preprocess import (
-    SinusoidalPositionEncoderOnline,
-    WavFrontend,
-    WavFrontendOnline,
-)
+    SinusoidalPositionEncoderOnline, WavFrontend, WavFrontendOnline)
 
 
 class ParaformerOnlineModel:

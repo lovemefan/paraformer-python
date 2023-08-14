@@ -8,18 +8,19 @@ from pathlib import Path
 from typing import Union
 
 import numpy as np
+
 from paraformerOnline.runtime.python.model.sv.campplus import Campplus
 from paraformerOnline.runtime.python.model.sv.eres2net import Eres2net
 
 model_names = {
-    'cam++': (Campplus, 'campplus.onnx'),
-    'eres2net': (Eres2net, 'eres2net-aug-sv.onnx'),
-    'eres2net-quant': (Eres2net, 'eres2net-aug-sv-quant.onnx'),
+    "cam++": (Campplus, "campplus.onnx"),
+    "eres2net": (Eres2net, "eres2net-aug-sv.onnx"),
+    "eres2net-quant": (Eres2net, "eres2net-aug-sv-quant.onnx"),
 }
 
 
 class SpeakerVerificationInfer:
-    def __init__(self, model_path=None, model_name='cam++', threshold=0.5):
+    def __init__(self, model_path=None, model_name="cam++", threshold=0.5):
         if model_name not in model_names:
             raise ValueError(f"model name {model_name} not in {model_names.keys()}")
         project_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))

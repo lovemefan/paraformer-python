@@ -9,7 +9,6 @@
 # @Author    :lovemefan
 # @Email     :lovemefan@outlook.com
 
-import logging
 
 from paraformerOnline import CttPunctuator
 from paraformerOnline.runtime.python.utils.logger import logger
@@ -38,4 +37,3 @@ for vad in vads:
     logger.info(f"Part: {result[0]}")
     rec_result_all += result[0]
     logger.info(f"Final: {rec_result_all}")
-

@@ -8,13 +8,8 @@ from pathlib import Path
 from typing import List, Union
 
 import numpy as np
-from onnxruntime import (
-    GraphOptimizationLevel,
-    InferenceSession,
-    SessionOptions,
-    get_available_providers,
-    get_device,
-)
+from onnxruntime import (GraphOptimizationLevel, InferenceSession,
+                         SessionOptions, get_available_providers, get_device)
 
 
 class ONNXRuntimeError(Exception):
