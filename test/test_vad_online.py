@@ -5,7 +5,7 @@
 # @Email     :lovemefan@outlook.com
 
 from paraformerOnline import FSMNVadOnline
-from paraformerOnline.runtime.python.utils.audioHelper import AudioReader
+from paraformerOnline import AudioReader
 
 # online
 in_cache = []

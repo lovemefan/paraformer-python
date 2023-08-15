@@ -5,8 +5,8 @@
 # @Email     :lovemefan@outlook.com
 import logging
 
-from paraformerOnline.runtime.python.asr_all_in_one import AsrAllInOne
-from paraformerOnline.runtime.python.utils.audioHelper import AudioReader
+from paraformerOnline import AsrAllInOne
+from paraformerOnline import AudioReader
 
 logging.basicConfig(
     level=logging.INFO,

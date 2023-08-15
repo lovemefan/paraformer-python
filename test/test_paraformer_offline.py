@@ -6,7 +6,7 @@
 import logging
 
 from paraformerOnline import ParaformerOffline
-from paraformerOnline.runtime.python.utils.audioHelper import AudioReader
+from paraformerOnline import AudioReader
 
 logging.basicConfig(
     level=logging.INFO,
