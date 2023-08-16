@@ -607,12 +607,9 @@ class E2EVadModel:
                 for i in range(self.output_data_buf_offset, len(self.output_data_buf)):
                     if not self.output_data_buf[i].contain_seg_start_point:
                         continue
-                    if (
-                        not self.next_seg
-                        and not self.output_data_buf[i].contain_seg_end_point
-                    ):
+                    if not self.next_seg and not self.output_data_buf[i].contain_seg_end_point:
                         continue
-                    # start_ms = self.output_data_buf[i].start_ms
+                    start_ms = self.output_data_buf[i].start_ms if self.next_seg else -1
                     if self.output_data_buf[i].contain_seg_end_point:
                         end_ms = self.output_data_buf[i].end_ms
                         self.next_seg = True
@@ -620,13 +617,7 @@ class E2EVadModel:
                     else:
                         end_ms = -1
                         self.next_seg = False
-
-                    if end_ms != -1:
-                        segment = [
-                            self.output_data_buf[i].start_ms,
-                            self.output_data_buf[i].end_ms,
-                        ]
-                        segments.append(segment)
+                    segments.append([start_ms, end_ms])
 
         return segments, in_cache
 

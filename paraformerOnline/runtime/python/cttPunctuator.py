@@ -31,6 +31,6 @@ class CttPunctuator:
     def punctuate(self, text: str, param_dict=None):
         if self.online:
             param_dict = param_dict or self.param_dict
-            return self.model(text, self.param_dict)
+            return self.model(text, param_dict)
         else:
             return self.model(text)

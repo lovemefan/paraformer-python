@@ -296,7 +296,7 @@ class CT_Transformer_VadRealtime(CT_Transformer):
                 sentenceEnd = i
                 break
         cache_out = sentence_words_list[sentenceEnd + 1 :]
-        if sentence_out[-1] in self.punc_list:
+        if len(sentence_out) > 0 and sentence_out[-1] in self.punc_list:
             sentence_out = sentence_out[:-1]
             sentence_punc_list_out[-1] = "_"
         param_dict[cache_key] = cache_out
