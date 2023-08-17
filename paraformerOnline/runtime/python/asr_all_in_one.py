@@ -70,6 +70,15 @@ class AsrAllInOne:
                 model_name=sv_model_name, threshold=sv_threshold
             )
 
+    def reset_asr(self):
+        self.frames = []
+        self.frames_asr_offline = []
+        self.frames_asr_online = []
+        self.start_frame = -1
+        self.end_frame = -1
+        self.vad_pre_idx = 0
+        self.vad.vad.all_reset_detection()
+
     def online(self, chunk: np.ndarray, is_final: bool = False):
         return self.asr_online.infer_online(chunk, is_final)
 
@@ -119,7 +128,7 @@ class AsrAllInOne:
         for start, end in segments:
             self.start_frame = start
             self.end_frame = end
-            print(self.start_frame, self.end_frame)
+            # print(self.start_frame, self.end_frame)
             if self.start_frame != -1:
                 self.speech_start = True
                 beg_bias = (self.vad_pre_idx - self.start_frame) / (len(chunk) // 16)
@@ -136,16 +145,22 @@ class AsrAllInOne:
                 # self.frames = self.frames[-10:]
 
             # parafprmer offline inference
-            if self.end_frame != -1:
+            if self.end_frame != -1 and len(self.frames_asr_offline) > 0:
                 time_start = time.time()
-                data = np.concatenate(self.frames_asr_offline[:-1])
+                if len(self.frames_asr_offline) > 1:
+                    data = np.concatenate(self.frames_asr_offline[:-1])
+                else:
+                    data = np.concatenate(self.frames_asr_offline)
                 asr_offline_final = self.asr_offline.infer_offline(data)
                 logger.debug(f"asr offline inference use {time.time() - time_start} s")
                 if self.speaker_verification:
                     time_start = time.time()
                     speaker_id = self.sv.recognize(data)
                     logger.debug(f"asr offline inference use {time.time() - time_start} s")
-                self.frames_asr_offline = [self.frames_asr_offline[-1]]
+                if len(self.frames_asr_offline) > 1:
+                    self.frames_asr_offline = [self.frames_asr_offline[-1]]
+                else:
+                    self.frames_asr_offline = []
                 self.speech_start = False
                 time_start = time.time()
                 _final = self.punc.punctuate(asr_offline_final)[0]
@@ -164,6 +179,9 @@ class AsrAllInOne:
             if self.speaker_verification:
                 result['speaker_id'] = speaker_id
             self.text_cache = ""
+
+        if is_final:
+            self.reset_asr()
 
         return result
 
