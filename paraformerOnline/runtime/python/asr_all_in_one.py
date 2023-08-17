@@ -114,7 +114,6 @@ class AsrAllInOne:
         segments_result = self.vad.segments_online(chunk, is_final=is_final)
         logger.debug(f"vad online inference use {time.time() - time_start} s")
 
-
         segments = self.extract_endpoint_from_vad_result(segments_result)
         final = None
         for start, end in segments:
@@ -135,7 +134,6 @@ class AsrAllInOne:
                 self.frames_asr_offline.extend(frames_pre)
                 # clear the frames queue
                 # self.frames = self.frames[-10:]
-
 
             # parafprmer offline inference
             if self.end_frame != -1:
