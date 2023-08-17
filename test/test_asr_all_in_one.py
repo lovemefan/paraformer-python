@@ -5,8 +5,7 @@
 # @Email     :lovemefan@outlook.com
 import logging
 
-from paraformerOnline import AsrAllInOne
-from paraformerOnline import AudioReader
+from paraformerOnline import AsrAllInOne, AudioReader
 
 logging.basicConfig(
     level=logging.INFO,
@@ -32,7 +31,7 @@ if __name__ == "__main__":
         else:
             is_final = False
         rec_result = model.two_pass_asr(
-            speech[sample_offset: sample_offset + step], is_final=is_final
+            speech[sample_offset : sample_offset + step], is_final=is_final
         )
 
         logging.info(rec_result)

@@ -7,12 +7,10 @@ import time
 
 import numpy as np
 
-from paraformerOnline import (
-    CttPunctuator,
-    FSMNVadOnline,
-    ParaformerOffline,
-    ParaformerOnline,
-)
+from paraformerOnline.runtime.python.cttPunctuator import CttPunctuator
+from paraformerOnline.runtime.python.fsmnVadInfer import FSMNVadOnline
+from paraformerOnline.runtime.python.paraformerInfer import (ParaformerOffline,
+                                                             ParaformerOnline)
 from paraformerOnline.runtime.python.svInfer import SpeakerVerificationInfer
 from paraformerOnline.runtime.python.utils.logger import logger
 

@@ -22,7 +22,8 @@ from typing import Tuple, Union
 import numpy as np
 
 from paraformerOnline.runtime.python.model.vad.fsmnvad import E2EVadModel
-from paraformerOnline.runtime.python.utils.asrOrtInferRuntimeSession import read_yaml
+from paraformerOnline.runtime.python.utils.asrOrtInferRuntimeSession import \
+    read_yaml
 from paraformerOnline.runtime.python.utils.audioHelper import AudioReader
 from paraformerOnline.runtime.python.utils.preprocess import WavFrontendOnline
 

@@ -4,8 +4,7 @@
 # @Author    :lovemefan
 # @Email     :lovemefan@outlook.com
 
-from paraformerOnline import FSMNVadOnline
-from paraformerOnline import AudioReader
+from paraformerOnline import AudioReader, FSMNVadOnline
 
 # online
 in_cache = []

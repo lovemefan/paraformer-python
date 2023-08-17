@@ -4,9 +4,7 @@
 # @Author    :lovemefan
 # @Email     :lovemefan@outlook.com
 from paraformerOnline.runtime.python.model.punc.punctuator import (
-    CT_Transformer,
-    CT_Transformer_VadRealtime,
-)
+    CT_Transformer, CT_Transformer_VadRealtime)
 from paraformerOnline.runtime.python.utils.logger import logger
 
 

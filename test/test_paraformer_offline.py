@@ -5,8 +5,7 @@
 # @Email     :lovemefan@outlook.com
 import logging
 
-from paraformerOnline import ParaformerOffline
-from paraformerOnline import AudioReader
+from paraformerOnline import AudioReader, ParaformerOffline
 
 logging.basicConfig(
     level=logging.INFO,
