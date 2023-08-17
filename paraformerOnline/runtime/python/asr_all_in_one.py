@@ -25,6 +25,7 @@ class AsrAllInOne:
             chunk_interval=10,
             sv_model_name="cam++",
             sv_threshold=0.6,
+            vad_speech_max_length=20000
     ):
         """
         Args:
@@ -45,6 +46,7 @@ class AsrAllInOne:
         self.chunk_interval = chunk_interval
         self.speech_start = False
         self.frames = []
+        self.offset = 0
 
         if mode == "offline":
             self.asr_offline = ParaformerOffline()
@@ -56,6 +58,7 @@ class AsrAllInOne:
             self.asr_offline = ParaformerOffline()
             self.asr_online = ParaformerOnline()
             self.vad = FSMNVadOnline()
+            self.vad.vad.vad_opts.max_single_segment_time = vad_speech_max_length
             self.punc = CttPunctuator(online=True)
             self.text_cache = ""
 
@@ -74,19 +77,103 @@ class AsrAllInOne:
         return self.asr_offline.infer_offline(audio_data)
 
     def extract_endpoint_from_vad_result(self, segments_result):
-        speech_start = -1
-        speech_end = -1
 
-        if len(segments_result) == 0:
-            return speech_start, speech_end
-        if segments_result[0][0] != -1:
-            speech_start = segments_result[0][0]
-        if segments_result[0][1] != -1:
-            speech_end = segments_result[0][1]
-        return speech_start, speech_end
+        segments = []
+        for _start, _end in segments_result:
+            start = -1
+            end = -1
+            if _start != -1:
+                start = _start
+            if _end != -1:
+                end = _end
+            segments.append([start, end])
+        return segments
 
     def two_pass_asr(self, chunk: np.ndarray, is_final: bool = False):
 
+        self.frames.append(chunk)
+        self.vad_pre_idx += len(chunk) // 16
+
+        # paraformer online inference
+        self.frames_asr_online.append(chunk)
+
+        if len(self.frames_asr_online) > 0 or self.end_frame != -1:
+            time_start = time.time()
+            data = np.concatenate(self.frames_asr_online)
+            partial = self.asr_online.infer_online(data, is_final)
+            self.text_cache += partial
+            # empty asr online buffer
+            logger.debug(f"asr online inference use {time.time() - time_start} s")
+            self.frames_asr_online = []
+
+        if self.speech_start:
+            self.frames_asr_offline.append(chunk)
+
+        # parafprmer vad inference
+        time_start = time.time()
+        segments_result = self.vad.segments_online(chunk, is_final=is_final)
+        logger.debug(f"vad online inference use {time.time() - time_start} s")
+
+
+        segments = self.extract_endpoint_from_vad_result(segments_result)
+        final = None
+        for start, end in segments:
+            self.start_frame = start
+            self.end_frame = end
+            print(self.start_frame, self.end_frame)
+            if self.start_frame != -1:
+                self.speech_start = True
+                beg_bias = (self.vad_pre_idx - self.start_frame) / (len(chunk) // 16)
+                # print(beg_bias)
+                end_idx = (beg_bias % 1) * len(self.frames[-int(beg_bias) - 1])
+                frames_pre = [self.frames[-int(beg_bias) - 1][-int(end_idx):]]
+                if int(beg_bias) != 0:
+                    frames_pre.extend(self.frames[-int(beg_bias):])
+                frames_pre = [np.concatenate(frames_pre)]
+                # print(len(frames_pre[0]))
+                self.frames_asr_offline = []
+                self.frames_asr_offline.extend(frames_pre)
+                # clear the frames queue
+                # self.frames = self.frames[-10:]
+
+
+            # parafprmer offline inference
+            if self.end_frame != -1:
+                time_start = time.time()
+                data = np.concatenate(self.frames_asr_offline[:-1])
+                asr_offline_final = self.asr_offline.infer_offline(data)
+                logger.debug(f"asr offline inference use {time.time() - time_start} s")
+                if self.speaker_verification:
+                    time_start = time.time()
+                    speaker_id = self.sv.recognize(data)
+                    logger.debug(f"asr offline inference use {time.time() - time_start} s")
+                self.frames_asr_offline = [self.frames_asr_offline[-1]]
+                self.speech_start = False
+                time_start = time.time()
+                _final = self.punc.punctuate(asr_offline_final)[0]
+                if final is not None:
+                    final += _final
+                else:
+                    final = _final
+                logger.debug(f"punc online inference use {time.time() - time_start} s")
+
+        result = {
+            "partial": self.text_cache,
+        }
+        if final is not None:
+            result["final"] = final
+            result['partial'] = ''
+            if self.speaker_verification:
+                result['speaker_id'] = speaker_id
+            self.text_cache = ""
+
+        return result
+
+    def two_pass_for_dialogue(self, chunk, is_final=False):
+        """
+        asr for dialogue
+        :return:
+        """
         self.frames.append(chunk)
         self.vad_pre_idx += len(chunk) // 16
 
@@ -117,18 +204,18 @@ class AsrAllInOne:
             self.speech_start = True
             # self.vad.vad.all_reset_detection()
             beg_bias = (self.vad_pre_idx - self.start_frame) / (len(chunk) // 16)
-            end_idx = (beg_bias % 1)*len(self.frames[-int(beg_bias) - 1])
+            end_idx = (beg_bias % 1) * len(self.frames[-int(beg_bias) - 1])
             frames_pre = [self.frames[-int(beg_bias) - 1][-int(end_idx):]]
             if int(beg_bias) != 0:
                 frames_pre.extend(self.frames[-int(beg_bias):])
             frames_pre = [np.concatenate(frames_pre)]
-            print(len(frames_pre[0]))
+
             self.frames_asr_offline = []
             self.frames_asr_offline.extend(frames_pre)
 
         final = None
         # parafprmer offline inference
-        if self.end_frame != -1 and len(self.frames_asr_offline) > 0:
+        if self.end_frame != -1 and len(self.frames_asr_offline) > 0 or is_final:
 
             time_start = time.time()
             data = np.concatenate(self.frames_asr_offline)
@@ -154,9 +241,3 @@ class AsrAllInOne:
             self.text_cache = ""
 
         return result
-
-    def two_pass_for_dialogue(self):
-        """
-        asr for dialogue
-        :return:
-        """
