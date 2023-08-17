@@ -313,4 +313,4 @@ class _LogActionOnce:
         return wrapper
 
 
-logger = get_logger()
+logger = get_logger(stdout_level="DEBUG")

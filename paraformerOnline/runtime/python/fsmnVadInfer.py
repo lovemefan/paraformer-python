@@ -22,8 +22,7 @@ from typing import Tuple, Union
 import numpy as np
 
 from paraformerOnline.runtime.python.model.vad.fsmnvad import E2EVadModel
-from paraformerOnline.runtime.python.utils.asrOrtInferRuntimeSession import \
-    read_yaml
+from paraformerOnline.runtime.python.utils.asrOrtInferRuntimeSession import read_yaml
 from paraformerOnline.runtime.python.utils.audioHelper import AudioReader
 from paraformerOnline.runtime.python.utils.preprocess import WavFrontendOnline
 
@@ -116,7 +115,9 @@ class FSMNVadOnline(FSMNVad):
     def segments_online(
         self, waveform: Union[str, np.ndarray], sample_rate=16000, is_final=False
     ):
-        """get sements of audio"""
+        """
+        get sements of audio
+        """
 
         if self.in_cache is None:
             self.in_cache = []
@@ -136,9 +137,13 @@ class FSMNVadOnline(FSMNVad):
         )
         return segments_part
 
-    def get_current_state(
+    def segments_online_with_speaker_verification(
         self, waveform: Union[str, np.ndarray], sample_rate=16000, is_final=False
     ):
+        """
+        get sements of audio with vad and speaker verificaton
+        """
+
         if self.in_cache is None:
             self.in_cache = []
 
@@ -148,11 +153,16 @@ class FSMNVadOnline(FSMNVad):
         assert (
             sample_rate == 16000
         ), f"only support 16k sample rate, current sample rate is {sample_rate}"
+
         if waveform.ndim == 1:
             waveform = waveform[None, ...]
         feats, feats_len = self.extract_feature(waveform)
         waveform = self.frontend.get_waveforms()
-        states = self.vad.get_frames_state(
+
+        segments_part, self.in_cache = self.vad.infer_online(
             feats, waveform, self.prepare_cache(self.in_cache), is_final=is_final
         )
-        return states
+
+        # segment again with speaker verification model
+
+        return segments_part

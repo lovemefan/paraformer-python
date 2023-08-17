@@ -7,8 +7,12 @@ import time
 
 import numpy as np
 
-from paraformerOnline import (CttPunctuator, FSMNVadOnline, ParaformerOffline,
-                              ParaformerOnline)
+from paraformerOnline import (
+    CttPunctuator,
+    FSMNVadOnline,
+    ParaformerOffline,
+    ParaformerOnline,
+)
 from paraformerOnline.runtime.python.svInfer import SpeakerVerificationInfer
 from paraformerOnline.runtime.python.utils.logger import logger
 
@@ -17,15 +21,15 @@ mode_available = ["offline", "file_transcription", "online", "2pass"]
 
 class AsrAllInOne:
     def __init__(
-            self,
-            mode: str,
-            *,
-            speaker_verification=False,
-            time_stamp=False,
-            chunk_interval=10,
-            sv_model_name="cam++",
-            sv_threshold=0.6,
-            vad_speech_max_length=20000
+        self,
+        mode: str,
+        *,
+        speaker_verification=False,
+        time_stamp=False,
+        chunk_interval=10,
+        sv_model_name="cam++",
+        sv_threshold=0.6,
+        vad_speech_max_length=20000,
     ):
         """
         Args:
@@ -34,7 +38,7 @@ class AsrAllInOne:
           time_stamp:
         """
         assert (
-                mode in mode_available
+            mode in mode_available
         ), f"{mode} is not support, only {mode_available} is available"
         self.mode = mode
         self.speaker_verification = speaker_verification
@@ -86,7 +90,6 @@ class AsrAllInOne:
         return self.asr_offline.infer_offline(audio_data)
 
     def extract_endpoint_from_vad_result(self, segments_result):
-
         segments = []
         for _start, _end in segments_result:
             start = -1
@@ -99,7 +102,6 @@ class AsrAllInOne:
         return segments
 
     def two_pass_asr(self, chunk: np.ndarray, is_final: bool = False):
-
         self.frames.append(chunk)
         self.vad_pre_idx += len(chunk) // 16
 
@@ -134,9 +136,9 @@ class AsrAllInOne:
                 beg_bias = (self.vad_pre_idx - self.start_frame) / (len(chunk) // 16)
                 # print(beg_bias)
                 end_idx = (beg_bias % 1) * len(self.frames[-int(beg_bias) - 1])
-                frames_pre = [self.frames[-int(beg_bias) - 1][-int(end_idx):]]
+                frames_pre = [self.frames[-int(beg_bias) - 1][-int(end_idx) :]]
                 if int(beg_bias) != 0:
-                    frames_pre.extend(self.frames[-int(beg_bias):])
+                    frames_pre.extend(self.frames[-int(beg_bias) :])
                 frames_pre = [np.concatenate(frames_pre)]
                 # print(len(frames_pre[0]))
                 self.frames_asr_offline = []
@@ -156,7 +158,9 @@ class AsrAllInOne:
                 if self.speaker_verification:
                     time_start = time.time()
                     speaker_id = self.sv.recognize(data)
-                    logger.debug(f"asr offline inference use {time.time() - time_start} s")
+                    logger.debug(
+                        f"asr offline inference use {time.time() - time_start} s"
+                    )
                 if len(self.frames_asr_offline) > 1:
                     self.frames_asr_offline = [self.frames_asr_offline[-1]]
                 else:
@@ -175,9 +179,9 @@ class AsrAllInOne:
         }
         if final is not None:
             result["final"] = final
-            result['partial'] = ''
+            result["partial"] = ""
             if self.speaker_verification:
-                result['speaker_id'] = speaker_id
+                result["speaker_id"] = speaker_id
             self.text_cache = ""
 
         if is_final:
@@ -214,16 +218,18 @@ class AsrAllInOne:
         time_start = time.time()
         segments_result = self.vad.segments_online(chunk, is_final=is_final)
         logger.debug(f"vad online inference use {time.time() - time_start} s")
-        self.start_frame, self.end_frame = self.extract_endpoint_from_vad_result(segments_result)
+        self.start_frame, self.end_frame = self.extract_endpoint_from_vad_result(
+            segments_result
+        )
 
         if self.start_frame != -1:
             self.speech_start = True
             # self.vad.vad.all_reset_detection()
             beg_bias = (self.vad_pre_idx - self.start_frame) / (len(chunk) // 16)
             end_idx = (beg_bias % 1) * len(self.frames[-int(beg_bias) - 1])
-            frames_pre = [self.frames[-int(beg_bias) - 1][-int(end_idx):]]
+            frames_pre = [self.frames[-int(beg_bias) - 1][-int(end_idx) :]]
             if int(beg_bias) != 0:
-                frames_pre.extend(self.frames[-int(beg_bias):])
+                frames_pre.extend(self.frames[-int(beg_bias) :])
             frames_pre = [np.concatenate(frames_pre)]
 
             self.frames_asr_offline = []
@@ -232,7 +238,6 @@ class AsrAllInOne:
         final = None
         # parafprmer offline inference
         if self.end_frame != -1 and len(self.frames_asr_offline) > 0 or is_final:
-
             time_start = time.time()
             data = np.concatenate(self.frames_asr_offline)
             # print(len(data))
@@ -251,9 +256,9 @@ class AsrAllInOne:
         }
         if final is not None:
             result["final"] = final
-            result['partial'] = ''
+            result["partial"] = ""
             if self.speaker_verification:
-                result['speaker_id'] = speaker_id
+                result["speaker_id"] = speaker_id
             self.text_cache = ""
 
         return result

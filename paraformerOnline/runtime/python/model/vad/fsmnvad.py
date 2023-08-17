@@ -12,8 +12,9 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 
 from paraformerOnline.runtime.python.utils.logger import logger
-from paraformerOnline.runtime.python.utils.vadOrtInferRuntimeSession import \
-    VadOrtInferRuntimeSession
+from paraformerOnline.runtime.python.utils.vadOrtInferRuntimeSession import (
+    VadOrtInferRuntimeSession,
+)
 
 
 class VadStateMachine(Enum):
@@ -607,7 +608,10 @@ class E2EVadModel:
                 for i in range(self.output_data_buf_offset, len(self.output_data_buf)):
                     if not self.output_data_buf[i].contain_seg_start_point:
                         continue
-                    if not self.next_seg and not self.output_data_buf[i].contain_seg_end_point:
+                    if (
+                        not self.next_seg
+                        and not self.output_data_buf[i].contain_seg_end_point
+                    ):
                         continue
                     start_ms = self.output_data_buf[i].start_ms if self.next_seg else -1
                     if self.output_data_buf[i].contain_seg_end_point:
