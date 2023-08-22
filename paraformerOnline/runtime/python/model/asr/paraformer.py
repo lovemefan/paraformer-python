@@ -18,8 +18,10 @@ from paraformerOnline.runtime.python.utils.postprocess import \
     sentence_postprocess
 from paraformerOnline.runtime.python.utils.preprocess import (
     SinusoidalPositionEncoderOnline, WavFrontend, WavFrontendOnline)
+from paraformerOnline.runtime.python.utils.singleton import singleton
 
 
+@singleton
 class ParaformerOnlineModel:
     def __init__(
         self,
