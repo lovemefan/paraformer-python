@@ -16,7 +16,10 @@ import numpy as np
 from onnxruntime import (GraphOptimizationLevel, InferenceSession,
                          SessionOptions, get_available_providers, get_device)
 
+from paraformerOnline.runtime.python.utils.singleton import singleton
 
+
+@singleton
 class VadOrtInferRuntimeSession:
     def __init__(self, config, root_dir: Path):
         sess_opt = SessionOptions()

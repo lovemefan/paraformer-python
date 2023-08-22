@@ -11,11 +11,14 @@ import numpy as np
 from onnxruntime import (GraphOptimizationLevel, InferenceSession,
                          SessionOptions, get_available_providers, get_device)
 
+from paraformerOnline.runtime.python.utils.singleton import singleton
+
 
 class ONNXRuntimeError(Exception):
     pass
 
 
+@singleton
 class PuncOrtInferRuntimeSession:
     def __init__(self, model_file, device_id=-1, intra_op_num_threads=4):
         device_id = str(device_id)

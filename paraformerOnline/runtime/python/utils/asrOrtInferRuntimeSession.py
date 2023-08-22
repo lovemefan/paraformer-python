@@ -16,6 +16,8 @@ import yaml
 from onnxruntime import (GraphOptimizationLevel, InferenceSession,
                          SessionOptions, get_available_providers, get_device)
 
+from paraformerOnline.runtime.python.utils.singleton import singleton
+
 root_dir = Path(__file__).resolve().parent
 
 
@@ -125,6 +127,7 @@ class ONNXRuntimeError(Exception):
     pass
 
 
+@singleton
 class AsrOnlineOrtInferRuntimeSession:
     def __init__(self, model_file, device_id=-1, intra_op_num_threads=4):
         device_id = str(device_id)
@@ -214,6 +217,7 @@ class AsrOnlineOrtInferRuntimeSession:
             raise FileExistsError(f"{model_path} is not a file.")
 
 
+@singleton
 class AsrOfflineOrtInferRuntimeSession:
     def __init__(self, model_file, device_id=-1, intra_op_num_threads=4):
         sess_opt = SessionOptions()
