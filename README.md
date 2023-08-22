@@ -28,4 +28,8 @@ Paraformer是达摩院语音团队提出的一种高效的非自回归端到端�
 
 ## 快速使用
 
-项目还没完善，再等等
+```bash
+git clone https://github.com/lovemefan/paraformer-online-python.git
+cd paraformer-online-python && pip install .
+python test/test_asr_all_in_one.py
+```
