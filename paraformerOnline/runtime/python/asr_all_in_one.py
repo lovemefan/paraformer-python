@@ -136,7 +136,7 @@ class AsrAllInOne:
                 beg_bias = (self.vad_pre_idx - self.start_frame) / (len(chunk) // 16)
                 # print(beg_bias)
                 end_idx = (beg_bias % 1) * len(self.frames[-int(beg_bias)])
-                frames_pre = [self.frames[-int(beg_bias)][-int(end_idx):]]
+                frames_pre = [self.frames[-int(beg_bias)][-int(end_idx) :]]
                 if int(beg_bias) != 0:
                     frames_pre.extend(self.frames[-int(beg_bias) :])
                 frames_pre = [np.concatenate(frames_pre)]
@@ -203,9 +203,7 @@ class AsrAllInOne:
             time_start = time.time()
             speaker_id = self.sv.recognize(np.concatenate(self.frames[-3:]))
             # print(speaker_id)
-            logger.debug(
-                f"asr offline inference use {time.time() - time_start} s"
-            )
+            logger.debug(f"asr offline inference use {time.time() - time_start} s")
 
         if len(self.frames_asr_online) > 0 or self.end_frame != -1:
             time_start = time.time()
@@ -235,9 +233,9 @@ class AsrAllInOne:
                 beg_bias = (self.vad_pre_idx - self.start_frame) / (len(chunk) // 16)
                 # print(beg_bias)
                 end_idx = (beg_bias % 1) * len(self.frames[-int(beg_bias) - 1])
-                frames_pre = [self.frames[-int(beg_bias) - 1][-int(end_idx):]]
+                frames_pre = [self.frames[-int(beg_bias) - 1][-int(end_idx) :]]
                 if int(beg_bias) != 0:
-                    frames_pre.extend(self.frames[-int(beg_bias):])
+                    frames_pre.extend(self.frames[-int(beg_bias) :])
                 frames_pre = [np.concatenate(frames_pre)]
                 # print(len(frames_pre[0]))
                 self.frames_asr_offline = []
