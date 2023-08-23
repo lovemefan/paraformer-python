@@ -42,8 +42,8 @@ class AsrAllInOne:
         self.mode = mode
         self.speaker_verification = speaker_verification
         self.time_stamp = time_stamp
-        self.start_frame = -1
-        self.end_frame = -1
+        self.start_frame = 0
+        self.end_frame = 0
         self.vad_pre_idx = 0
         self.mode = mode
         self.chunk_interval = chunk_interval
@@ -78,8 +78,8 @@ class AsrAllInOne:
         self.frames = []
         self.frames_asr_offline = []
         self.frames_asr_online = []
-        self.start_frame = -1
-        self.end_frame = -1
+        self.start_frame = 0
+        self.end_frame = 0
         self.vad_pre_idx = 0
         self.vad.vad.all_reset_detection()
 
@@ -103,7 +103,7 @@ class AsrAllInOne:
 
     def two_pass_asr(self, chunk: np.ndarray, is_final: bool = False):
         self.frames.append(chunk)
-        self.vad_pre_idx += len(chunk) // 16
+        self.vad_pre_idx += len(chunk)
 
         # paraformer online inference
         self.frames_asr_online.append(chunk)
@@ -128,32 +128,27 @@ class AsrAllInOne:
         segments = self.extract_endpoint_from_vad_result(segments_result)
         final = None
         for start, end in segments:
-            self.start_frame = start
-            self.end_frame = end
             # print(self.start_frame, self.end_frame)
-            if self.start_frame != -1:
+            if start != -1:
                 self.speech_start = True
-                beg_bias = (self.vad_pre_idx - self.start_frame) / (len(chunk) // 16)
-                # print(beg_bias)
-                end_idx = (beg_bias % 1) * len(self.frames[-int(beg_bias)])
-                frames_pre = [self.frames[-int(beg_bias)][-int(end_idx) :]]
-                if int(beg_bias) != 0:
-                    frames_pre.extend(self.frames[-int(beg_bias) :])
-                frames_pre = [np.concatenate(frames_pre)]
-                # print(len(frames_pre[0]))
-                self.frames_asr_offline = []
-                self.frames_asr_offline.extend(frames_pre)
+                self.start_frame = self.end_frame if self.end_frame != 0 else start
+                end_idx = sum([len(i) for i in self.frames])
+                split_num = (end_idx - self.start_frame*16) // len(chunk) + 1
+                frames_pre = np.concatenate(self.frames[-split_num:])[self.start_frame*16-self.offset:]
+                self.offset += end_idx
+                # self.frames_asr_offline = []
+                self.frames_asr_offline.append(frames_pre)
                 # clear the frames queue
-                # self.frames = self.frames[-10:]
 
             # parafprmer offline inference
-            if self.end_frame != -1 and len(self.frames_asr_offline) > 0:
+            if end != -1 and len(self.frames_asr_offline) > 0:
+                self.end_frame = end + 500
                 time_start = time.time()
-                if len(self.frames_asr_offline) > 1:
-                    data = np.concatenate(self.frames_asr_offline[:-1])
-                else:
-                    data = np.concatenate(self.frames_asr_offline)
+                self.frames_asr_offline.append(chunk)
+                data = np.concatenate(self.frames_asr_offline)
+                data, _left = data[:(self.end_frame-self.start_frame)*16], data[(self.end_frame-self.start_frame)*16:]
                 asr_offline_final = self.asr_offline.infer_offline(data)
+                self.frames_asr_offline = [_left]
                 logger.debug(f"asr offline inference use {time.time() - time_start} s")
                 if self.speaker_verification:
                     time_start = time.time()
