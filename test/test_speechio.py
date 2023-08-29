@@ -4,6 +4,8 @@
 # @Author    :lovemefan
 # @Email     :lovemefan@outlook.com
 import argparse
+import json
+
 from jiwer import cer
 import logging.handlers
 import os.path
@@ -25,6 +27,7 @@ parse.add_argument('-n', '--name', required=True)
 args = parse.parse_args()
 
 logger = logging.getLogger('paraformer cer test')
+logger.parent = None
 stream_handler = logging.StreamHandler(sys.stdout)
 stream_handler.setLevel(logging.INFO)
 stream_formatter = logging.Formatter(DEFAULT_FORMAT)
@@ -36,6 +39,7 @@ file_handler = logging.handlers.RotatingFileHandler(filename=os.path.join(_LOG_F
 file_handler.setLevel(logging.INFO)
 file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
+logger.setLevel(logging.INFO)
 
 
 model = ParaformerOffline()
@@ -60,13 +64,19 @@ def cal_cer(config):
     _cer_all = 0
     for id, info in tqdm(transcripts.items()):
         audio, sample_rate = AudioReader.read_wav_file(os.path.join(input, info['path']))
+        text = info['text'].replace(' ', '')
         hypothesis = model.infer_offline(audio)
         error = cer(text, hypothesis)
+        transcripts[id]['hypothesis'] = hypothesis
+        transcripts[id]['error'] = error
 
         logger.info(f"id:{id} path: {info['path']}, ground_truth: {text} , hypothesis: {hypothesis}, cer:{error}")
         _cer_all += error
 
     logger.info(f"all cer is :{_cer_all/len(transcripts.keys())}")
+
+    with open(f'{config.name}.json', 'w', encoding='utf-8') as file:
+        json.dump(transcripts, file)
 
 
 if __name__ == '__main__':
