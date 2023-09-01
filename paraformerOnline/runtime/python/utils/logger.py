@@ -15,7 +15,7 @@ from typing import List, Tuple, Union
 
 logger_list = []
 LEVEL = ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
-_LOG_FILE_DIR = "~/.cache/paraformer/"
+_LOG_FILE_DIR = "paraformer_logs/"
 LOCAL_DEFAULT_LOG_FILE_DIR = os.path.join(
     os.getenv("LOCAL_DEFAULT_PATH", _LOG_FILE_DIR), "log"
 )
