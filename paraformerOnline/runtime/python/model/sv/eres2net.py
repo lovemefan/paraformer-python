@@ -9,9 +9,13 @@ import numpy as np
 import onnxruntime
 
 from paraformerOnline.runtime.python.model.sv.campplus import Campplus
+from paraformerOnline.runtime.python.utils.singleton import singleton
+
+campplus_class = Campplus().__class__
 
 
-class Eres2net(Campplus):
+@singleton
+class Eres2net(campplus_class):
     def __init__(self, onnx_path=None, threshold=0.5):
         self.onnx = onnx_path or os.path.join(
             os.path.dirname(os.path.dirname(__file__)), "onnx/campplus.onnx"

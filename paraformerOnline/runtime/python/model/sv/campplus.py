@@ -7,8 +7,10 @@ import numpy as np
 import onnxruntime
 
 from paraformerOnline.runtime.python.utils.audioHelper import AudioReader
+from paraformerOnline.runtime.python.utils.singleton import singleton
 
 
+@singleton
 class Campplus:
     def __init__(self, onnx_path=None, threshold=0.5):
         """
@@ -16,7 +18,7 @@ class Campplus:
         :param threshold: threshold of speaker embedding similarity
         """
         self.onnx = onnx_path or os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "onnx/campplus.onnx"
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))), "onnx/sv/campplus.onnx"
         )
         self.sess = onnxruntime.InferenceSession(self.onnx)
         self.output_name = [nd.name for nd in self.sess.get_outputs()]

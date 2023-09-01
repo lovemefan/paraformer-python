@@ -14,6 +14,7 @@ from paraformerOnline.runtime.python.utils.asrOrtInferRuntimeSession import (
 from paraformerOnline.runtime.python.utils.logger import logger
 from paraformerOnline.runtime.python.utils.puncOrtInferRuntimeSession import (
     ONNXRuntimeError, PuncOrtInferRuntimeSession)
+from paraformerOnline.runtime.python.utils.singleton import singleton
 
 
 class CT_Transformer:
@@ -166,6 +167,7 @@ class CT_Transformer:
         return outputs
 
 
+@singleton
 class CT_Transformer_VadRealtime(CT_Transformer):
     """
     Author: Speech Lab, Alibaba Group, China
@@ -182,7 +184,7 @@ class CT_Transformer_VadRealtime(CT_Transformer):
         quantize: bool = False,
         intra_op_num_threads: int = 4,
     ):
-        super(CT_Transformer_VadRealtime, self).__init__(
+        super().__init__(
             model_dir, batch_size, device_id, quantize, intra_op_num_threads
         )
 
