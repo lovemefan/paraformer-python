@@ -335,6 +335,7 @@ class ParaformerOnlineModel:
         ).astype(np.int32)
 
 
+@singleton
 class ParaformerOfflineModel:
     def __init__(self, model_dir: str = None, intra_op_num_threads=4) -> None:
         config_path = os.path.join(model_dir, "config.yaml")
