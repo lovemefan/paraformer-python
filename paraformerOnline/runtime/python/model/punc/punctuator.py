@@ -17,7 +17,6 @@ from paraformerOnline.runtime.python.utils.puncOrtInferRuntimeSession import (
 from paraformerOnline.runtime.python.utils.singleton import singleton
 
 
-@singleton
 class CT_Transformer:
     """
     Author: Speech Lab, Alibaba Group, China
@@ -168,11 +167,8 @@ class CT_Transformer:
         return outputs
 
 
-CT_Transformer_calss = CT_Transformer().__class__
-
-
 @singleton
-class CT_Transformer_VadRealtime(CT_Transformer_calss):
+class CT_Transformer_VadRealtime(CT_Transformer):
     """
     Author: Speech Lab, Alibaba Group, China
     CT-Transformer: Controllable time-delay transformer for
