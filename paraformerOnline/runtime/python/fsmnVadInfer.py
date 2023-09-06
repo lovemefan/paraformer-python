@@ -14,7 +14,6 @@ __copyright__ = "Copyright (C) 2016 lovemefan"
 __license__ = "MIT"
 __version__ = "v0.0.1"
 
-import logging
 import os.path
 from pathlib import Path
 from typing import Tuple, Union
@@ -25,7 +24,8 @@ from paraformerOnline.runtime.python.model.vad.fsmnvad import E2EVadModel
 from paraformerOnline.runtime.python.utils.asrOrtInferRuntimeSession import \
     read_yaml
 from paraformerOnline.runtime.python.utils.audioHelper import AudioReader
-from paraformerOnline.runtime.python.utils.preprocess import WavFrontendOnline
+from paraformerOnline.runtime.python.utils.logger import logger
+from paraformerOnline.runtime.python.utils.preprocess import WavFrontendOnline, WavFrontend
 
 root_dir = Path(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -35,11 +35,11 @@ root_dir = Path(
 class FSMNVad(object):
     def __init__(self, config_path=root_dir / "onnx/vad/config.yaml"):
         self.config = read_yaml(config_path)
-        self.frontend = WavFrontendOnline(
+        self.frontend = WavFrontend(
             cmvn_file=root_dir / "onnx/vad/am.mvn",
             **self.config["WavFrontend"]["frontend_conf"],
         )
-        self.config["FSMN"]["model_path"] = root_dir / "onnx/vad/fsmnvad-online.onnx"
+        self.config["FSMN"]["model_path"] = root_dir / "onnx/vad/fsmnvad-offline.onnx"
 
         self.vad = E2EVadModel(
             self.config["FSMN"], self.config["vadPostArgs"], root_dir
@@ -56,19 +56,22 @@ class FSMNVad(object):
     def is_speech(self, buf, sample_rate=16000):
         assert sample_rate == 16000, "only support 16k sample rate"
 
-    def segments_offline(self, waveform_path: Union[str, Path]):
+    def segments_offline(self, waveform_path: Union[str, Path, np.ndarray]):
         """get sements of audio"""
 
-        logging.info(f"load audio {waveform_path}")
-        if not os.path.exists(waveform_path):
-            raise FileExistsError(f"{waveform_path} is not exist.")
-        if os.path.isfile(waveform_path):
-            waveform, _sample_rate = AudioReader.read_wav_file(waveform_path)
+        if isinstance(waveform_path, np.ndarray):
+            waveform = waveform_path
         else:
-            raise FileNotFoundError(str(Path))
-        assert (
-            _sample_rate == 16000
-        ), f"only support 16k sample rate, current sample rate is {_sample_rate}"
+            if not os.path.exists(waveform_path):
+                raise FileExistsError(f"{waveform_path} is not exist.")
+            if os.path.isfile(waveform_path):
+                logger.info(f"load audio {waveform_path}")
+                waveform, _sample_rate = AudioReader.read_wav_file(waveform_path)
+            else:
+                raise FileNotFoundError(str(Path))
+            assert (
+                _sample_rate == 16000
+            ), f"only support 16k sample rate, current sample rate is {_sample_rate}"
 
         feats, feats_len = self.extract_feature(waveform)
         waveform = waveform[None, ...]
@@ -78,13 +81,21 @@ class FSMNVad(object):
         return segments_part[0]
 
 
-class FSMNVadOnline(FSMNVad):
+class FSMNVadOnline:
     def __init__(self, config_path=None):
         project_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
         config_path = config_path or os.path.join(
             project_dir, "onnx", "vad", "config.yaml"
         )
-        super(FSMNVadOnline, self).__init__(config_path)
+        self.config = read_yaml(config_path)
+        self.frontend = WavFrontendOnline(
+            cmvn_file=root_dir / "onnx/vad/am.mvn",
+            **self.config["WavFrontend"]["frontend_conf"],
+        )
+        self.config["FSMN"]["model_path"] = root_dir / "onnx/vad/fsmnvad-online.onnx"
+        self.vad = E2EVadModel(
+            self.config["FSMN"], self.config["vadPostArgs"], root_dir
+        )
         self.in_cache = None
 
     def extract_feature(
