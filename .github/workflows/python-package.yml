@@ -36,9 +36,12 @@ jobs:
     - name: Test paraformer offline onnx
       run: |
         python3 test/test_paraformer_offline.py
-    - name: Test vad onnx
+    - name: Test vad onnx online
       run: |
         python3 test/test_vad_online.py
+    - name: Test vad onnx offline
+      run: |
+        python3 test/test_vad_offline.py
     - name: Test paraformer online onnx
       run: |
         python3 test/test_paraformer_online.py
