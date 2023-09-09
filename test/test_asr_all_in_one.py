@@ -14,12 +14,18 @@ logging.basicConfig(
 
 if __name__ == "__main__":
     logging.info("Testing online asr")
-    wav_path = "test/vad_example.wav"
+    wav_path = "test/P9_0002.wav"
     speech, sample_rate = AudioReader.read_wav_file(wav_path)
     speech_length = speech.shape[0]
     sample_offset = 0
-    step = 10 * 960
-    model = AsrAllInOne(mode="2pass", speaker_verification=True)
+    step = 9600
+    model = AsrAllInOne(
+        mode="2pass",
+        speaker_verification=True,
+        sv_threshold=0.75,
+        sv_model_name="cam++",
+        hot_words='任意热词 空格隔开'
+    )
 
     final_result = ""
     for sample_offset in range(

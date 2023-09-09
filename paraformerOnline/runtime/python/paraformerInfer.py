@@ -52,15 +52,15 @@ class ParaformerOffline:
         )
         self.param_dict = {"cache": dict()}
 
-    def infer_offline(self, audio: np.ndarray):
+    def infer_offline(self, audio: np.ndarray, hot_words: str = ''):
         """
         Args:
-            chunk: 300ms is best
-            is_final: final flag of chunk
+            audio: 600ms is best
+            hot_words: hot words split by space . eg `a b cc`
 
         Return:
             transcript of audio
         """
-        result = self.model.infer(audio)
+        result = self.model.infer(audio, hot_words)
 
         return result[0][0]

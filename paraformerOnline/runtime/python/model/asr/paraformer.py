@@ -352,8 +352,11 @@ class ParaformerOfflineModel:
         else:
             model_file = glob.glob(os.path.join(model_dir, "model_quant_*.onnx"))
 
+        contextual_model = os.path.join(model_dir, "model_eb.onnx")
         self.ort_infer = AsrOfflineOrtInferRuntimeSession(
-            model_file, intra_op_num_threads=intra_op_num_threads
+            model_file,
+            contextual_model=contextual_model,
+            intra_op_num_threads=intra_op_num_threads
         )
 
     def extract_feat(self, waveforms: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
@@ -362,54 +365,90 @@ class ParaformerOfflineModel:
 
         return feats.astype(np.float32), feats_len.astype(np.int32)
 
-    async def transcribe(self, audio: Union[np.ndarray]):
-        waveform = audio[None, ...]
-        feats, feats_len = self.extract_feat(waveform)
-        am_scores = self.ort_infer(input_content=[feats, feats_len])
+    def decoder_with_greedy_search(self, am_score):
+        yseq = am_score.argmax(axis=-1)
+        score = am_score.max(axis=-1)
+        score = np.sum(score, axis=-1)
 
-        results = []
-        for am_score in am_scores:
-            pred_res = await self.infer_one_feat(am_score)
-            results.append(pred_res)
-        return results
+        # pad with mask tokens to ensure compatibility with sos/eos tokens
+        # asr_model.sos:1  asr_model.eos:2
+        yseq = np.array([1] + yseq.tolist() + [2])
+        hyp = Hypothesis(yseq=yseq, score=score)
+        # remove sos/eos and get results
+        last_pos = -1
+        token_int = hyp.yseq[1:last_pos].tolist()
 
-    def infer(self, audio: Union[str, np.ndarray, bytes]):
-        def infer_one_feat_without_async(am_score):
-            yseq = am_score.argmax(axis=-1)
-            score = am_score.max(axis=-1)
-            score = np.sum(score, axis=-1)
+        # remove blank symbol id, which is assumed to be 0
+        token_int = list(filter(lambda x: x not in (0, 2), token_int))
 
-            # pad with mask tokens to ensure compatibility with sos/eos tokens
-            # asr_model.sos:1  asr_model.eos:2
-            yseq = np.array([1] + yseq.tolist() + [2])
-            hyp = Hypothesis(yseq=yseq, score=score)
-            # remove sos/eos and get results
-            last_pos = -1
-            token_int = hyp.yseq[1:last_pos].tolist()
+        # Change integer-ids to tokens
+        token = self.converter.ids2tokens(token_int)
+        texts = sentence_postprocess(token)
+        return texts
 
-            # remove blank symbol id, which is assumed to be 0
-            token_int = list(filter(lambda x: x not in (0, 2), token_int))
+    def decoder_with_beam_search(self, am_score):
+        pass
 
-            # Change integer-ids to tokens
-            token = self.converter.ids2tokens(token_int)
-            texts = sentence_postprocess(token)
-            return texts
-
+    def infer(self, audio: Union[str, np.ndarray, bytes], hot_words: str = None):
         if isinstance(audio, str):
             audio, _ = AudioReader.read_wav_file(audio)
         elif isinstance(audio, bytes):
             audio, _ = AudioReader.read_wav_bytes(audio)
 
         feats, feats_len = self.extract_feat(audio)
+        feats = feats[None, ...]
+        feats_len = feats_len[None, ...]
+
+        hot_words, hot_words_length = self.proc_hot_words(hot_words)
+
+        input_dict = dict(zip(self.ort_infer.get_contextual_model_input_names(), (hot_words,)))
+        [bias_embed] = self.ort_infer.contextual_model.run(None, input_dict)
+
+        # index from bias_embed
+        bias_embed = bias_embed.transpose(1, 0, 2)
+        _ind = np.arange(0, len(hot_words)).tolist()
+        bias_embed = bias_embed[_ind, hot_words_length]
+        bias_embed = np.expand_dims(bias_embed, axis=0)
+        bias_embed = np.repeat(bias_embed, feats.shape[0], axis=0)
+
         if feats_len > 0:
             am_scores = self.ort_infer(
-                input_content=[feats[None, ...], feats_len[None, ...]]
+                feats=feats,
+                feats_length=feats_len,
+                bias_embed=bias_embed
             )
         else:
             am_scores = []
 
         results = []
         for am_score in am_scores:
-            pred_res = infer_one_feat_without_async(am_score)
+            pred_res = self.decoder_with_greedy_search(am_score)
             results.append(pred_res)
         return results if len(results) != 0 else [[""]]
+
+    def proc_hot_words(self, hot_words: str):
+        hot_words = hot_words.strip().split(" ")
+        hot_words_length = [len(i) - 1 for i in hot_words]
+        hot_words_length.append(0)
+        hot_words_length = np.array(hot_words_length).astype('int32')
+
+        def word_map(word):
+            return np.array([self.converter.tokens2ids(i)[0] for i in word])
+
+        hot_words_int = [word_map(i) for i in hot_words]
+        # import pdb; pdb.set_trace()
+        hot_words_int.append(np.array([1]))
+        hot_words = self._pad_list(hot_words_int, max_len=10)
+        return hot_words, hot_words_length
+
+    def _pad_list(self, xs, max_len=None):
+        n_batch = len(xs)
+        if max_len is None:
+            max_len = max(x.size(0) for x in xs)
+
+        pad = np.zeros((n_batch, max_len), dtype=np.int32)
+
+        for i in range(n_batch):
+            pad[i, : xs[i].shape[0]] = xs[i]
+
+        return pad

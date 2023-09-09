@@ -29,6 +29,7 @@ class AsrAllInOne:
         sv_threshold=0.6,
         sv_max_start_silence_time=3000,
         vad_speech_max_length=20000,
+        hot_words=''
     ):
         """
         Args:
@@ -50,6 +51,7 @@ class AsrAllInOne:
         self.speech_start = False
         self.frames = []
         self.offset = 0
+        self.hot_words = hot_words
 
         if mode == "offline":
             self.asr_offline = ParaformerOffline()
@@ -87,7 +89,7 @@ class AsrAllInOne:
         return self.asr_online.infer_online(chunk, is_final)
 
     def offline(self, audio_data: np.ndarray):
-        return self.asr_offline.infer_offline(audio_data)
+        return self.asr_offline.infer_offline(audio_data, hot_words=self.hot_words)
 
     def extract_endpoint_from_vad_result(self, segments_result):
         segments = []
@@ -133,8 +135,10 @@ class AsrAllInOne:
                 self.speech_start = True
                 self.start_frame = self.end_frame if self.end_frame != 0 else start
                 end_idx = sum([len(i) for i in self.frames])
-                split_num = (end_idx - self.start_frame*16) // len(chunk) + 1
-                frames_pre = np.concatenate(self.frames[-split_num:])[self.start_frame*16-self.offset:]
+                split_num = (end_idx - self.start_frame * 16) // len(chunk) + 1
+                frames_pre = np.concatenate(self.frames[-split_num:])[
+                    self.start_frame * 16 - self.offset:
+                ]
                 self.offset += end_idx
                 # self.frames_asr_offline = []
                 self.frames_asr_offline.append(frames_pre)
@@ -146,7 +150,10 @@ class AsrAllInOne:
                 time_start = time.time()
                 self.frames_asr_offline.append(chunk)
                 data = np.concatenate(self.frames_asr_offline)
-                data, _left = data[:(self.end_frame-self.start_frame)*16], data[(self.end_frame-self.start_frame)*16:]
+                data, _left = (
+                    data[: (self.end_frame - self.start_frame) * 16],
+                    data[(self.end_frame - self.start_frame) * 16 :],
+                )
                 asr_offline_final = self.asr_offline.infer_offline(data)
                 self.frames_asr_offline = [_left]
                 logger.debug(f"asr offline inference use {time.time() - time_start} s")

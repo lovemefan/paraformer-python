@@ -218,7 +218,7 @@ class AsrOnlineOrtInferRuntimeSession:
 
 @singleton
 class AsrOfflineOrtInferRuntimeSession:
-    def __init__(self, model_file, device_id=-1, intra_op_num_threads=4):
+    def __init__(self, model_file, contextual_model, device_id=-1, intra_op_num_threads=4):
         sess_opt = SessionOptions()
         sess_opt.log_severity_level = 4
         sess_opt.intra_op_num_threads = intra_op_num_threads
@@ -258,6 +258,9 @@ class AsrOfflineOrtInferRuntimeSession:
         self.session = InferenceSession(
             model_file, sess_options=sess_opt, providers=EP_list
         )
+        self.contextual_model = InferenceSession(
+            contextual_model, sess_options=sess_opt, providers=EP_list
+        )
 
         if device_id != "-1" and cuda_ep not in self.session.get_providers():
             logging.warning(
@@ -268,15 +271,37 @@ class AsrOfflineOrtInferRuntimeSession:
             )
 
     def __call__(
-        self, input_content: List[Union[np.ndarray, np.ndarray]]
+        self,
+        feats: Union[np.ndarray],
+        feats_length: Union[np.ndarray],
+        bias_embed: np.ndarray = None
     ) -> np.ndarray:
-        input_dict = dict(zip(self.get_input_names(), input_content))
+        """
+        Args:
+            feats: numpy.ndarray , [batch size , feats length, dim ] batch only support 1, dim is 560
+            feats_length:  numpy.ndarray, [feats length]
+            bias_embed: numpy.ndarray, [batch size, max string length, dim]
+                batch only support 1, max string length is 10, dim is 512
+
+        Returns:
+
+        """
+
+        input_dict = dict(zip(self.get_asr_input_names(), (feats, feats_length, bias_embed)))
         return self.session.run(None, input_dict)[0]
 
-    def get_input_names(
+    def get_hot_words_embedding(self):
+        pass
+
+    def get_asr_input_names(
         self,
     ):
         return [v.name for v in self.session.get_inputs()]
+
+    def get_contextual_model_input_names(
+        self,
+    ):
+        return [v.name for v in self.contextual_model.get_inputs()]
 
     def get_output_names(
         self,
@@ -300,6 +325,28 @@ class AsrOfflineOrtInferRuntimeSession:
         if not model_path.is_file():
             raise FileExistsError(f"{model_path} is not a file.")
 
+    def proc_hot_word(self, hot_words):
+
+        hot_words_length = [len(i) - 1 for i in hot_words]
+        hot_words_length.append(0)
+
+        hot_words_length = np.array(hot_words_length)
+
+        # hotwords.append('<s>')
+        def word_map(word):
+            return np.array([self.vocab[i] for i in word])
+
+        hot_word_int = [word_map(i) for i in hot_words]
+        hot_word_int.append(np.array([1]))
+        n_batch = len(hot_word_int)
+
+        hot_words = np.zeros((n_batch, 10, *hot_word_int[0].size()[1:]))
+
+        for i in range(n_batch):
+            hot_words[i, : hot_word_int[i].size(0)] = hot_word_int[i]
+
+        return hot_words, hot_words_length
+
 
 def split_to_mini_sentence(words: list, word_limit: int = 20):
     assert word_limit > 1
@@ -309,7 +356,7 @@ def split_to_mini_sentence(words: list, word_limit: int = 20):
     length = len(words)
     sentence_len = length // word_limit
     for i in range(sentence_len):
-        sentences.append(words[i * word_limit : (i + 1) * word_limit])
+        sentences.append(words[i * word_limit: (i + 1) * word_limit])
     if length % word_limit > 0:
         sentences.append(words[sentence_len * word_limit :])
     return sentences
