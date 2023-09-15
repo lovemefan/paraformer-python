@@ -44,7 +44,7 @@ vadPostArgs:
   do_extend: 1
   lookback_time_start_point: 200
   lookahead_time_end_point: 100
-  max_single_segment_time: 60000
+  max_single_segment_time: 10000
   snr_thres: -100.0
   noise_frame_num_used_for_snr: 100
   decibel_thres: -100.0
