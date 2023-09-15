@@ -14,7 +14,7 @@ speech_length = speech.shape[0]
 sample_offset = 0
 step = 1600
 vad_online = FSMNVadOnline()
-print(f"The audio totol has {len(speech)} frames")
+print(f"The audio total has {len(speech)} frames")
 for sample_offset in range(0, speech_length, min(step, speech_length - sample_offset)):
     if sample_offset + step >= speech_length - 1:
         step = speech_length - sample_offset
@@ -25,12 +25,12 @@ for sample_offset in range(0, speech_length, min(step, speech_length - sample_of
         speech[sample_offset : sample_offset + step], is_final=is_final
     )
     if segments_result:
-        buffer = vad_online.vad.data_buf
+        buffer = vad_online.vad.data_buf_size
         if buffer is not None:
             frame_start = vad_online.vad.data_buf_start_frame * int(
                 vad_online.vad.vad_opts.frame_in_ms
                 * vad_online.vad.vad_opts.sample_rate
                 / 1000
             )
-            print(frame_start, len(vad_online.vad.data_buf))
+            print(frame_start, vad_online.vad.data_buf_size)
         print(segments_result)
