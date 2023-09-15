@@ -25,7 +25,8 @@ from paraformerOnline.runtime.python.utils.asrOrtInferRuntimeSession import \
     read_yaml
 from paraformerOnline.runtime.python.utils.audioHelper import AudioReader
 from paraformerOnline.runtime.python.utils.logger import logger
-from paraformerOnline.runtime.python.utils.preprocess import WavFrontendOnline, WavFrontend
+from paraformerOnline.runtime.python.utils.preprocess import (
+    WavFrontend, WavFrontendOnline)
 
 root_dir = Path(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -51,7 +52,7 @@ class FSMNVad(object):
     def extract_feature(self, waveform):
         fbank, _ = self.frontend.fbank(waveform)
         feats, feats_len = self.frontend.lfr_cmvn(fbank)
-        return feats, feats_len
+        return feats.astype(np.float32), feats_len
 
     def is_speech(self, buf, sample_rate=16000):
         assert sample_rate == 16000, "only support 16k sample rate"
