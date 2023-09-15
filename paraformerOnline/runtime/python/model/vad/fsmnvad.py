@@ -251,8 +251,8 @@ class E2EVadModel:
         self.scores = None
         self.max_time_out = False
         self.decibel = []
-        self.data_buf = None
-        self.data_buf_all = None
+        self.data_buf_size = 0
+        self.data_buf_all_size = 0
         self.waveform = None
         self.reset_detection()
 
@@ -283,8 +283,8 @@ class E2EVadModel:
         self.scores = None
         self.max_time_out = False
         self.decibel = []
-        self.data_buf = None
-        self.data_buf_all = None
+        self.data_buf = 0
+        self.data_buf_all = 0
         self.waveform = None
         self.reset_detection()
 
@@ -306,13 +306,11 @@ class E2EVadModel:
         frame_shift_length = int(
             self.vad_opts.frame_in_ms * self.vad_opts.sample_rate / 1000
         )
-        if self.data_buf_all is None:
-            self.data_buf_all = self.waveform[
-                0
-            ]  # self.data_buf is pointed to self.waveform[0]
-            self.data_buf = self.data_buf_all
+        if self.data_buf_all_size == 0:
+            self.data_buf_all_size = len(self.waveform[0])
+            self.data_buf_size = self.data_buf_all_size
         else:
-            self.data_buf_all = np.concatenate((self.data_buf_all, self.waveform[0]))
+            self.data_buf_all_size += len(self.waveform[0])
         for offset in range(
             0, self.waveform.shape[1] - frame_sample_length + 1, frame_shift_length
         ):
@@ -347,16 +345,15 @@ class E2EVadModel:
 
     def pop_data_buf_till_frame(self, frame_idx: int) -> None:  # need check again
         while self.data_buf_start_frame < frame_idx:
-            if len(self.data_buf) >= int(
+            if self.data_buf_size >= int(
                 self.vad_opts.frame_in_ms * self.vad_opts.sample_rate / 1000
             ):
                 self.data_buf_start_frame += 1
-                self.data_buf = self.data_buf_all[
-                    self.data_buf_start_frame
-                    * int(
-                        self.vad_opts.frame_in_ms * self.vad_opts.sample_rate / 1000
-                    ) :
-                ]
+                self.data_buf_size = (
+                    self.data_buf_all_size
+                    - self.data_buf_start_frame
+                    * int(self.vad_opts.frame_in_ms * self.vad_opts.sample_rate / 1000)
+                )
 
     def pop_data_to_output_buf(
         self,
@@ -380,8 +377,8 @@ class E2EVadModel:
             )
             expected_sample_number += int(extra_sample)
         if end_point_is_sent_end:
-            expected_sample_number = max(expected_sample_number, len(self.data_buf))
-        if len(self.data_buf) < expected_sample_number:
+            expected_sample_number = max(expected_sample_number, self.data_buf_size)
+        if self.data_buf_size < expected_sample_number:
             logging.error("error in calling pop data_buf\n")
 
         if len(self.output_data_buf) == 0 or first_frm_is_start_point:
@@ -401,10 +398,10 @@ class E2EVadModel:
             data_to_pop = int(
                 frm_cnt * self.vad_opts.frame_in_ms * self.vad_opts.sample_rate / 1000
             )
-        if data_to_pop > len(self.data_buf):
+        if data_to_pop > self.data_buf_size:
             logging.error("VAD data_to_pop is bigger than self.data_buf.size()!!!\n")
-            data_to_pop = len(self.data_buf)
-            expected_sample_number = len(self.data_buf)
+            data_to_pop = self.data_buf_size
+            expected_sample_number = self.data_buf_size
 
         cur_seg.doa = 0
         for sample_cpy_out in range(0, data_to_pop):
@@ -666,6 +663,7 @@ class E2EVadModel:
         for i in range(self.vad_opts.nn_eval_block_size - 1, -1, -1):
             frame_state = FrameState.kFrameStateInvalid
             frame_state = self.get_frame_state(self.frm_cnt - 1 - i)
+            # print(f"cur frame: {self.frm_cnt - 1 - i}, state is {frame_state}")
             self.detect_one_frame(frame_state, self.frm_cnt - 1 - i, False)
 
         return 0
