@@ -3,17 +3,11 @@
 # @Time      :2023/8/8 20:30
 # @Author    :lovemefan
 # @Email     :lovemefan@outlook.com
-# -*- encoding: utf-8 -*-
 import copy
-from pathlib import Path
 from typing import List, Tuple
 
 import kaldi_native_fbank as knf
 import numpy as np
-
-root_dir = Path(__file__).resolve().parent
-
-logger_initialized = {}
 
 
 class WavFrontend:
@@ -91,7 +85,7 @@ class WavFrontend:
             feat = self.apply_cmvn(feat)
 
         feat_len = np.array(feat.shape[0]).astype(np.int32)
-        return feat.astype(np.float32), feat_len
+        return feat, feat_len
 
     @staticmethod
     def apply_lfr(inputs: np.ndarray, lfr_m: int, lfr_n: int) -> np.ndarray:
@@ -221,7 +215,7 @@ class WavFrontendOnline(WavFrontend):
         )
 
     def fbank(
-        self, input: np.ndarray
+        self, input: np.ndarray, input_lengths: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         self.fbank_fn = knf.OnlineFbank(self.opts)
         batch_size = input.shape[0]
@@ -277,14 +271,14 @@ class WavFrontendOnline(WavFrontend):
         return self.fbanks, self.fbanks_lens
 
     def lfr_cmvn(
-        self, input: np.ndarray, is_final: bool = False
+        self, input: np.ndarray, input_lengths: np.ndarray, is_final: bool = False
     ) -> Tuple[np.ndarray, np.ndarray, List[int]]:
         batch_size = input.shape[0]
         feats = []
         feats_lens = []
         lfr_splice_frame_idxs = []
         for i in range(batch_size):
-            mat = input[i, : len(input[i]), :]
+            mat = input[i, : input_lengths[i], :]
             lfr_splice_frame_idx = -1
             if self.lfr_m != 1 or self.lfr_n != 1:
                 # update self.lfr_splice_cache in self.apply_lfr
@@ -309,7 +303,9 @@ class WavFrontendOnline(WavFrontend):
         assert (
             batch_size == 1
         ), "we support to extract feature online only when the batch size is equal to 1 now"
-        waveforms, feats, feats_lengths = self.fbank(input)  # input shape: B T D
+        waveforms, feats, feats_lengths = self.fbank(
+            input, input_lengths
+        )  # input shape: B T D
         if feats.shape[0]:
             self.waveforms = (
                 waveforms
@@ -337,7 +333,7 @@ class WavFrontendOnline(WavFrontend):
                     (self.lfr_m - 1) // 2 if self.reserve_waveforms is None else 0
                 )
                 feats, feats_lengths, lfr_splice_frame_idxs = self.lfr_cmvn(
-                    feats, is_final
+                    feats, feats_lengths, is_final
                 )
                 if self.lfr_m == 1:
                     self.reserve_waveforms = None
@@ -387,24 +383,6 @@ class WavFrontendOnline(WavFrontend):
         self.reserve_waveforms = None
         self.input_cache = None
         self.lfr_splice_cache = []
-
-
-def load_bytes(input):
-    middle_data = np.frombuffer(input, dtype=np.int16)
-    middle_data = np.asarray(middle_data)
-    if middle_data.dtype.kind not in "iu":
-        raise TypeError("'middle_data' must be an array of integers")
-    dtype = np.dtype("float32")
-    if dtype.kind != "f":
-        raise TypeError("'dtype' must be a floating point type")
-
-    i = np.iinfo(middle_data.dtype)
-    abs_max = 2 ** (i.bits - 1)
-    offset = i.min + abs_max
-    array = np.frombuffer(
-        (middle_data.astype(dtype) - offset) / abs_max, dtype=np.float32
-    )
-    return array
 
 
 class SinusoidalPositionEncoderOnline:

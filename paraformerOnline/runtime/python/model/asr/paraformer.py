@@ -185,7 +185,6 @@ class ParaformerOnlineModel:
 
         # predictor forward
         acoustic_embeds, acoustic_embeds_len = self.cif_search(enc, cif_alphas, cache)
-
         # decoder forward
         asr_res = []
         if acoustic_embeds.shape[1] > 0:
@@ -202,6 +201,7 @@ class ParaformerOnlineModel:
             ]
 
             preds = self.decode(logits, acoustic_embeds_len)
+
             for pred in preds:
                 pred = sentence_postprocess(pred)
                 asr_res.append({"preds": pred})
@@ -356,7 +356,7 @@ class ParaformerOfflineModel:
         self.ort_infer = AsrOfflineOrtInferRuntimeSession(
             model_file,
             contextual_model=contextual_model,
-            intra_op_num_threads=intra_op_num_threads
+            intra_op_num_threads=intra_op_num_threads,
         )
 
     def extract_feat(self, waveforms: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
@@ -401,7 +401,9 @@ class ParaformerOfflineModel:
 
         hot_words, hot_words_length = self.proc_hot_words(hot_words)
 
-        input_dict = dict(zip(self.ort_infer.get_contextual_model_input_names(), (hot_words,)))
+        input_dict = dict(
+            zip(self.ort_infer.get_contextual_model_input_names(), (hot_words,))
+        )
         [bias_embed] = self.ort_infer.contextual_model.run(None, input_dict)
 
         # index from bias_embed
@@ -413,9 +415,7 @@ class ParaformerOfflineModel:
 
         if feats_len > 0:
             am_scores = self.ort_infer(
-                feats=feats,
-                feats_length=feats_len,
-                bias_embed=bias_embed
+                feats=feats, feats_length=feats_len, bias_embed=bias_embed
             )
         else:
             am_scores = []
@@ -430,7 +430,7 @@ class ParaformerOfflineModel:
         hot_words = hot_words.strip().split(" ")
         hot_words_length = [len(i) - 1 for i in hot_words]
         hot_words_length.append(0)
-        hot_words_length = np.array(hot_words_length).astype('int32')
+        hot_words_length = np.array(hot_words_length).astype("int32")
 
         def word_map(word):
             return np.array([self.converter.tokens2ids(i)[0] for i in word])

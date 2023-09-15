@@ -26,12 +26,12 @@ class CT_Transformer:
     """
 
     def __init__(
-            self,
-            model_dir: Union[str, Path] = None,
-            batch_size: int = 1,
-            device_id: Union[str, int] = "-1",
-            quantize: bool = True,
-            intra_op_num_threads: int = 4,
+        self,
+        model_dir: Union[str, Path] = None,
+        batch_size: int = 1,
+        device_id: Union[str, int] = "-1",
+        quantize: bool = True,
+        intra_op_num_threads: int = 4,
     ):
         project_dir = os.path.dirname(
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
@@ -110,8 +110,8 @@ class CT_Transformer:
                 last_comma_index = -1
                 for i in range(len(punctuations) - 2, 1, -1):
                     if (
-                            self.punc_list[punctuations[i]] == "。"
-                            or self.punc_list[punctuations[i]] == "？"
+                        self.punc_list[punctuations[i]] == "。"
+                        or self.punc_list[punctuations[i]] == "？"
                     ):
                         sentenceEnd = i
                         break
@@ -119,25 +119,25 @@ class CT_Transformer:
                         last_comma_index = i
 
                 if (
-                        sentenceEnd < 0
-                        and len(mini_sentence) > cache_pop_trigger_limit
-                        and last_comma_index >= 0
+                    sentenceEnd < 0
+                    and len(mini_sentence) > cache_pop_trigger_limit
+                    and last_comma_index >= 0
                 ):
                     # The sentence it too long, cut off at a comma.
                     sentenceEnd = last_comma_index
                     punctuations[sentenceEnd] = self.period
-                cache_sent = mini_sentence[sentenceEnd + 1:]
-                cache_sent_id = mini_sentence_id[sentenceEnd + 1:].tolist()
-                mini_sentence = mini_sentence[0: sentenceEnd + 1]
-                punctuations = punctuations[0: sentenceEnd + 1]
+                cache_sent = mini_sentence[sentenceEnd + 1 :]
+                cache_sent_id = mini_sentence_id[sentenceEnd + 1 :].tolist()
+                mini_sentence = mini_sentence[0 : sentenceEnd + 1]
+                punctuations = punctuations[0 : sentenceEnd + 1]
 
             new_mini_sentence_punc += [int(x) for x in punctuations]
             words_with_punc = []
             for i in range(len(mini_sentence)):
                 if i > 0:
                     if (
-                            len(mini_sentence[i][0].encode()) == 1
-                            and len(mini_sentence[i - 1][0].encode()) == 1
+                        len(mini_sentence[i][0].encode()) == 1
+                        and len(mini_sentence[i - 1][0].encode()) == 1
                     ):
                         mini_sentence[i] = " " + mini_sentence[i]
                 words_with_punc.append(mini_sentence[i])
@@ -161,7 +161,7 @@ class CT_Transformer:
         return new_mini_sentence_out, new_mini_sentence_punc_out
 
     def infer(
-            self, feats: np.ndarray, feats_len: np.ndarray
+        self, feats: np.ndarray, feats_len: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:
         outputs = self.ort_infer([feats.astype("int32"), feats_len])
         return outputs
@@ -177,12 +177,12 @@ class CT_Transformer_VadRealtime(CT_Transformer):
     """
 
     def __init__(
-            self,
-            model_dir: Union[str, Path] = None,
-            batch_size: int = 1,
-            device_id: Union[str, int] = "-1",
-            quantize: bool = False,
-            intra_op_num_threads: int = 4,
+        self,
+        model_dir: Union[str, Path] = None,
+        batch_size: int = 1,
+        device_id: Union[str, int] = "-1",
+        quantize: bool = False,
+        intra_op_num_threads: int = 4,
     ):
         super().__init__(
             model_dir, batch_size, device_id, quantize, intra_op_num_threads
@@ -221,8 +221,8 @@ class CT_Transformer_VadRealtime(CT_Transformer):
                 "input": np.array(mini_sentence_id[None, :], dtype="int64"),
                 "text_lengths": np.array([text_length], dtype="int32"),
                 "vad_mask": self.vad_mask(text_length, len(cache))[
-                            None, None, :, :
-                            ].astype(np.float32),
+                    None, None, :, :
+                ].astype(np.float32),
                 "sub_masks": np.tril(
                     np.ones((text_length, text_length), dtype=np.float32)
                 )[None, None, :, :].astype(np.float32),
@@ -246,8 +246,8 @@ class CT_Transformer_VadRealtime(CT_Transformer):
                 last_comma_index = -1
                 for i in range(len(punctuations) - 2, 1, -1):
                     if (
-                            self.punc_list[punctuations[i]] == "。"
-                            or self.punc_list[punctuations[i]] == "？"
+                        self.punc_list[punctuations[i]] == "。"
+                        or self.punc_list[punctuations[i]] == "？"
                     ):
                         sentenceEnd = i
                         break
@@ -255,17 +255,17 @@ class CT_Transformer_VadRealtime(CT_Transformer):
                         last_comma_index = i
 
                 if (
-                        sentenceEnd < 0
-                        and len(mini_sentence) > cache_pop_trigger_limit
-                        and last_comma_index >= 0
+                    sentenceEnd < 0
+                    and len(mini_sentence) > cache_pop_trigger_limit
+                    and last_comma_index >= 0
                 ):
                     # The sentence it too long, cut off at a comma.
                     sentenceEnd = last_comma_index
                     punctuations[sentenceEnd] = self.period
-                cache_sent = mini_sentence[sentenceEnd + 1:]
-                cache_sent_id = mini_sentence_id[sentenceEnd + 1:]
-                mini_sentence = mini_sentence[0: sentenceEnd + 1]
-                punctuations = punctuations[0: sentenceEnd + 1]
+                cache_sent = mini_sentence[sentenceEnd + 1 :]
+                cache_sent_id = mini_sentence_id[sentenceEnd + 1 :]
+                mini_sentence = mini_sentence[0 : sentenceEnd + 1]
+                punctuations = punctuations[0 : sentenceEnd + 1]
 
             punctuations_np = [int(x) for x in punctuations]
             new_mini_sentence_punc += punctuations_np
@@ -278,8 +278,8 @@ class CT_Transformer_VadRealtime(CT_Transformer):
         for i in range(0, len(sentence_words_list)):
             if i > 0:
                 if (
-                        len(sentence_words_list[i][0].encode()) == 1
-                        and len(sentence_words_list[i - 1][-1].encode()) == 1
+                    len(sentence_words_list[i][0].encode()) == 1
+                    and len(sentence_words_list[i - 1][-1].encode()) == 1
                 ):
                     sentence_words_list[i] = " " + sentence_words_list[i]
             if skip_num < len(cache):
@@ -297,7 +297,7 @@ class CT_Transformer_VadRealtime(CT_Transformer):
             if sentence_punc_list[i] == "。" or sentence_punc_list[i] == "？":
                 sentenceEnd = i
                 break
-        cache_out = sentence_words_list[sentenceEnd + 1:]
+        cache_out = sentence_words_list[sentenceEnd + 1 :]
         if len(sentence_out) > 0 and sentence_out[-1] in self.punc_list:
             sentence_out = sentence_out[:-1]
             sentence_punc_list_out[-1] = "_"
@@ -316,15 +316,15 @@ class CT_Transformer_VadRealtime(CT_Transformer):
         if vad_pos <= 0 or vad_pos >= size:
             return ret
         sub_corner = np.zeros((vad_pos - 1, size - vad_pos), dtype=dtype)
-        ret[0: vad_pos - 1, vad_pos:] = sub_corner
+        ret[0 : vad_pos - 1, vad_pos:] = sub_corner
         return ret
 
     def infer(
-            self,
-            feats: np.ndarray,
-            feats_len: np.ndarray,
-            vad_mask: np.ndarray,
-            sub_masks: np.ndarray,
+        self,
+        feats: np.ndarray,
+        feats_len: np.ndarray,
+        vad_mask: np.ndarray,
+        sub_masks: np.ndarray,
     ) -> Tuple[np.ndarray, np.ndarray]:
         outputs = self.ort_infer(
             [feats.astype("int32"), feats_len, vad_mask, sub_masks]

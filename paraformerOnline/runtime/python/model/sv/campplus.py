@@ -18,7 +18,12 @@ class Campplus:
         :param threshold: threshold of speaker embedding similarity
         """
         self.onnx = onnx_path or os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))), "onnx/sv/campplus.onnx"
+            os.path.dirname(
+                os.path.dirname(
+                    os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+                )
+            ),
+            "onnx/sv/campplus.onnx",
         )
         self.sess = onnxruntime.InferenceSession(self.onnx)
         self.output_name = [nd.name for nd in self.sess.get_outputs()]

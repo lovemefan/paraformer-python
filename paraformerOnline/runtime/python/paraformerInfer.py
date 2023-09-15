@@ -52,7 +52,7 @@ class ParaformerOffline:
         )
         self.param_dict = {"cache": dict()}
 
-    def infer_offline(self, audio: np.ndarray, hot_words: str = ''):
+    def infer_offline(self, audio: np.ndarray, hot_words: str = ""):
         """
         Args:
             audio: 600ms is best
