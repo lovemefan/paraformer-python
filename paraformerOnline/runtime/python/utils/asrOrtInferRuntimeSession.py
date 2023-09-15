@@ -184,7 +184,8 @@ class AsrOnlineOrtInferRuntimeSession:
     ) -> np.ndarray:
         input_dict = dict(zip(self.get_input_names(), input_content))
         try:
-            return self.session.run(self.get_output_names(), input_dict)
+            result = self.session.run(self.get_output_names(), input_dict)
+            return result
         except Exception as e:
             raise ONNXRuntimeError("ONNXRuntime inferece failed.") from e
 
@@ -218,7 +219,9 @@ class AsrOnlineOrtInferRuntimeSession:
 
 @singleton
 class AsrOfflineOrtInferRuntimeSession:
-    def __init__(self, model_file, contextual_model, device_id=-1, intra_op_num_threads=4):
+    def __init__(
+        self, model_file, contextual_model, device_id=-1, intra_op_num_threads=4
+    ):
         sess_opt = SessionOptions()
         sess_opt.log_severity_level = 4
         sess_opt.intra_op_num_threads = intra_op_num_threads
@@ -274,7 +277,7 @@ class AsrOfflineOrtInferRuntimeSession:
         self,
         feats: Union[np.ndarray],
         feats_length: Union[np.ndarray],
-        bias_embed: np.ndarray = None
+        bias_embed: np.ndarray = None,
     ) -> np.ndarray:
         """
         Args:
@@ -287,7 +290,9 @@ class AsrOfflineOrtInferRuntimeSession:
 
         """
 
-        input_dict = dict(zip(self.get_asr_input_names(), (feats, feats_length, bias_embed)))
+        input_dict = dict(
+            zip(self.get_asr_input_names(), (feats, feats_length, bias_embed))
+        )
         return self.session.run(None, input_dict)[0]
 
     def get_hot_words_embedding(self):
@@ -326,7 +331,6 @@ class AsrOfflineOrtInferRuntimeSession:
             raise FileExistsError(f"{model_path} is not a file.")
 
     def proc_hot_word(self, hot_words):
-
         hot_words_length = [len(i) - 1 for i in hot_words]
         hot_words_length.append(0)
 
@@ -356,7 +360,7 @@ def split_to_mini_sentence(words: list, word_limit: int = 20):
     length = len(words)
     sentence_len = length // word_limit
     for i in range(sentence_len):
-        sentences.append(words[i * word_limit: (i + 1) * word_limit])
+        sentences.append(words[i * word_limit : (i + 1) * word_limit])
     if length % word_limit > 0:
         sentences.append(words[sentence_len * word_limit :])
     return sentences
