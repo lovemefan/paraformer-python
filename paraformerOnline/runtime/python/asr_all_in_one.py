@@ -29,7 +29,7 @@ class AsrAllInOne:
         sv_threshold=0.6,
         sv_max_start_silence_time=3000,
         vad_speech_max_length=20000,
-        hot_words=''
+        hot_words="",
     ):
         """
         Args:
@@ -58,8 +58,6 @@ class AsrAllInOne:
         elif mode == "online":
             self.asr_online = ParaformerOnline()
         elif mode == "2pass":
-            self.frames_asr_offline = []
-            self.frames_asr_online = []
             self.asr_offline = ParaformerOffline()
             self.asr_online = ParaformerOnline()
             self.vad = FSMNVadOnline()
@@ -78,8 +76,6 @@ class AsrAllInOne:
 
     def reset_asr(self):
         self.frames = []
-        self.frames_asr_offline = []
-        self.frames_asr_online = []
         self.start_frame = 0
         self.end_frame = 0
         self.vad_pre_idx = 0
@@ -104,25 +100,22 @@ class AsrAllInOne:
         return segments
 
     def two_pass_asr(self, chunk: np.ndarray, is_final: bool = False):
-        self.frames.append(chunk)
+        self.frames.extend(chunk.tolist())
         self.vad_pre_idx += len(chunk)
 
         # paraformer online inference
-        self.frames_asr_online.append(chunk)
 
-        if len(self.frames_asr_online) > 0 or self.end_frame != -1:
+        if self.end_frame != -1:
             time_start = time.time()
-            data = np.concatenate(self.frames_asr_online)
-            partial = self.asr_online.infer_online(data, is_final)
+            partial = self.asr_online.infer_online(chunk, is_final)
             self.text_cache += partial
             # empty asr online buffer
             logger.debug(f"asr online inference use {time.time() - time_start} s")
-            self.frames_asr_online = []
 
-        if self.speech_start:
-            self.frames_asr_offline.append(chunk)
+        # if self.speech_start:
+        #     self.frames_asr_offline.append(chunk)
 
-        # parafprmer vad inference
+        # paraformer vad inference
         time_start = time.time()
         segments_result = self.vad.segments_online(chunk, is_final=is_final)
         logger.debug(f"vad online inference use {time.time() - time_start} s")
@@ -130,32 +123,20 @@ class AsrAllInOne:
         segments = self.extract_endpoint_from_vad_result(segments_result)
         final = None
         for start, end in segments:
-            # print(self.start_frame, self.end_frame)
             if start != -1:
                 self.speech_start = True
-                self.start_frame = self.end_frame if self.end_frame != 0 else start
-                end_idx = sum([len(i) for i in self.frames])
-                split_num = (end_idx - self.start_frame * 16) // len(chunk) + 1
-                frames_pre = np.concatenate(self.frames[-split_num:])[
-                    self.start_frame * 16 - self.offset:
-                ]
-                self.offset += end_idx
-                # self.frames_asr_offline = []
-                self.frames_asr_offline.append(frames_pre)
-                # clear the frames queue
+                self.start_frame = start * 16
+                start = self.start_frame + len(self.frames) - self.vad_pre_idx
+                self.frames = self.frames[start:]
 
             # parafprmer offline inference
-            if end != -1 and len(self.frames_asr_offline) > 0:
-                self.end_frame = end + 500
+            if end != -1:
+                self.end_frame = end * 16
                 time_start = time.time()
-                self.frames_asr_offline.append(chunk)
-                data = np.concatenate(self.frames_asr_offline)
-                data, _left = (
-                    data[: (self.end_frame - self.start_frame) * 16],
-                    data[(self.end_frame - self.start_frame) * 16 :],
-                )
+                end = self.end_frame + len(self.frames) - self.vad_pre_idx
+                data = np.array(self.frames[:end])
+                self.frames = self.frames[end:]
                 asr_offline_final = self.asr_offline.infer_offline(data)
-                self.frames_asr_offline = [_left]
                 logger.debug(f"asr offline inference use {time.time() - time_start} s")
                 if self.speaker_verification:
                     time_start = time.time()
@@ -163,17 +144,10 @@ class AsrAllInOne:
                     logger.debug(
                         f"asr offline inference use {time.time() - time_start} s"
                     )
-                if len(self.frames_asr_offline) > 1:
-                    self.frames_asr_offline = [self.frames_asr_offline[-1]]
-                else:
-                    self.frames_asr_offline = []
                 self.speech_start = False
                 time_start = time.time()
                 _final = self.punc.punctuate(asr_offline_final)[0]
-                if final is not None:
-                    final += _final
-                else:
-                    final = _final
+                final = _final
                 logger.debug(f"punc online inference use {time.time() - time_start} s")
 
         result = {
