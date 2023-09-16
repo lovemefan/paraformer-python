@@ -122,6 +122,8 @@ class AsrAllInOne:
 
         segments = self.extract_endpoint_from_vad_result(segments_result)
         final = None
+        time_stamp_start = 0
+        time_stamp_end = 0
         for start, end in segments:
             if start != -1:
                 self.speech_start = True
@@ -129,9 +131,11 @@ class AsrAllInOne:
                 start = self.start_frame + len(self.frames) - self.vad_pre_idx
                 self.frames = self.frames[start:]
 
-            # parafprmer offline inference
+            # paraformer offline inference
             if end != -1:
                 self.end_frame = end * 16
+                time_stamp_start = self.start_frame / 16
+                time_stamp_end = end
                 time_start = time.time()
                 end = self.end_frame + len(self.frames) - self.vad_pre_idx
                 data = np.array(self.frames[:end])
@@ -156,6 +160,10 @@ class AsrAllInOne:
         if final is not None:
             result["final"] = final
             result["partial"] = ""
+            result['time_stamp'] = {
+                'start': time_stamp_start,
+                'end': time_stamp_end
+            }
             if self.speaker_verification:
                 result["speaker_id"] = speaker_id
             self.text_cache = ""
