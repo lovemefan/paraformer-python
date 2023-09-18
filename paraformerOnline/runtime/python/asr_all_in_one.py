@@ -67,7 +67,13 @@ class AsrAllInOne:
             self.text_cache = ""
 
         elif mode == "file_transcription":
-            pass
+            self.asr_offline = ParaformerOffline()
+            self.vad = FSMNVadOnline()
+            self.vad.vad.vad_opts.max_single_segment_time = vad_speech_max_length
+            self.vad.vad.vad_opts.max_start_silence_time = sv_max_start_silence_time
+            self.punc = CttPunctuator(online=False)
+        else:
+            raise ValueError(f"Do not support mode: {mode}")
 
         if speaker_verification:
             self.sv = SpeakerVerificationInfer(
@@ -98,6 +104,75 @@ class AsrAllInOne:
                 end = _end
             segments.append([start, end])
         return segments
+
+    def one_sentence_asr(self, audio: np.ndarray):
+        """asr offline + punc
+        """
+        result = self.asr_offline.infer_offline(audio, hot_words=self.hot_words)
+        result = self.punc.punctuate(result)[0]
+        return result
+
+    def file_transcript(self, audio: np.ndarray, step=9600):
+        """
+        asr offline + vad + punc
+        Args:
+            audio:
+            step:
+
+        Returns:
+
+        """
+        vad_pre_idx = 0
+        speech_length = len(audio)
+        sample_offset = 0
+        for sample_offset in range(
+                0, speech_length, min(step, speech_length - sample_offset)
+        ):
+            if sample_offset + step >= speech_length - 1:
+                step = speech_length - sample_offset
+                is_final = True
+            else:
+                is_final = False
+            chunk = audio[sample_offset: sample_offset + step]
+            vad_pre_idx += len(chunk)
+            segments_result = self.vad.segments_online(chunk, is_final=is_final)
+            start_frame = 0
+            end_frame = 0
+            result = {}
+            for start, end in segments_result:
+                if start != -1:
+                    start_ms = start
+
+                # paraformer offline inference
+                if end != -1:
+                    end_frame = end * 16
+                    end_ms = end
+                    data = np.array(audio[start_ms * 16: end_frame])
+                    time_start = time.time()
+                    asr_offline_final = self.asr_offline.infer_offline(data)
+                    logger.debug(f"asr offline inference use {time.time() - time_start} s")
+                    if self.speaker_verification:
+                        time_start = time.time()
+                        speaker_id = self.sv.recognize(data)
+                        result["speaker_id"] = speaker_id
+                        logger.debug(
+                            f"asr offline inference use {time.time() - time_start} s"
+                        )
+                    self.speech_start = False
+                    time_start = time.time()
+                    _final = self.punc.punctuate(asr_offline_final)[0]
+                    logger.debug(f"punc online inference use {time.time() - time_start} s")
+
+                    result["text"] = _final
+                    result['time_stamp'] = {
+                        'start': start_ms,
+                        'end': end_ms
+                    }
+
+                    if is_final:
+                        self.reset_asr()
+
+                    yield result
 
     def two_pass_asr(self, chunk: np.ndarray, is_final: bool = False):
         self.frames.extend(chunk.tolist())
