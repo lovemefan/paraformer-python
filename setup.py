@@ -34,7 +34,7 @@ setup_requires = requirements["setup"]
 
 
 setup(
-    name="paraformer-online",
+    name="paraformer-python",
     version=version,
     url="https://github.com/lovemefan/paraformer-online-python",
     author="Lovemefan, Yunnan Key Laboratory of Artificial Intelligence, "
