@@ -81,7 +81,7 @@ class Campplus:
         output = self.sess.run(self.output_name, input_feed=feed_dict)
         return output
 
-    def recognize(self, waveform: Union[str, Path, bytes]):
+    def recognize(self, waveform: Union[str, Path, bytes], threshold=0.65):
         """
         auto register speaker with input waveform。
         input waveform, output speaker id , id in range 0,1,2,....,n
@@ -97,7 +97,7 @@ class Campplus:
         sim = self.compute_cos_similarity(emb)[0]
         max_sim_index = np.argmax(sim)
 
-        if sim[max_sim_index] <= self.threshhold:
+        if sim[max_sim_index] <= threshold:
             self.register_speaker(emb)
 
         return max_sim_index
