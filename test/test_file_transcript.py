@@ -21,7 +21,7 @@ if __name__ == "__main__":
         mode="file_transcription",
         speaker_verification=True,
         sv_threshold=0.75,
-        sv_model_name="eres2net-quant",
+        sv_model_name="cam++",
         hot_words="任意热词 空格隔开",
     )
 
