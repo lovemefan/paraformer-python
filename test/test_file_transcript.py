@@ -14,7 +14,7 @@ logging.basicConfig(
 
 if __name__ == "__main__":
     logging.info("Testing online asr")
-    wav_path = "vad_example.wav"
+    wav_path = "test/vad_example.wav"
     speech, sample_rate = AudioReader.read_wav_file(wav_path)
 
     model = AsrAllInOne(
