@@ -54,3 +54,7 @@ jobs:
     - name: Test asr all in one onnx
       run: |
         python3 test/test_asr_all_in_one.py
+
+    - name: Test file transcription
+      run: |
+        python3 test/test_file_transcript.py
