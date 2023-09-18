@@ -28,4 +28,4 @@ if __name__ == "__main__":
     results = model.file_transcript(speech)
 
     for i in results:
-        print(i)
+        logging.info(i)
