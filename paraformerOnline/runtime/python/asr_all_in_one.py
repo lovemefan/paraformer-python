@@ -174,7 +174,7 @@ class AsrAllInOne:
 
                     yield result
 
-    def two_pass_asr(self, chunk: np.ndarray, is_final: bool = False):
+    def two_pass_asr(self, chunk: np.ndarray, is_final: bool = False, hot_words=None):
         self.frames.extend(chunk.tolist())
         self.vad_pre_idx += len(chunk)
 
@@ -215,7 +215,7 @@ class AsrAllInOne:
                 end = self.end_frame + len(self.frames) - self.vad_pre_idx
                 data = np.array(self.frames[:end])
                 self.frames = self.frames[end:]
-                asr_offline_final = self.asr_offline.infer_offline(data)
+                asr_offline_final = self.asr_offline.infer_offline(data, hot_words=(hot_words or self.hot_words))
                 logger.debug(f"asr offline inference use {time.time() - time_start} s")
                 if self.speaker_verification:
                     time_start = time.time()
