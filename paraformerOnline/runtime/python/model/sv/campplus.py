@@ -25,7 +25,17 @@ class Campplus:
             ),
             "onnx/sv/campplus.onnx",
         )
-        self.sess = onnxruntime.InferenceSession(self.onnx)
+        cpu_ep = "CPUExecutionProvider"
+        cpu_provider_options = {
+            "arena_extend_strategy": "kSameAsRequested",
+        }
+
+        self.sess = onnxruntime.InferenceSession(
+            self.onnx,
+            providers=[
+                (cpu_ep, cpu_provider_options),
+            ],
+        )
         self.output_name = [nd.name for nd in self.sess.get_outputs()]
         self.threshhold = threshold
         self.memory: np.ndarray = None
@@ -95,6 +105,7 @@ class Campplus:
             self.memory = emb / np.linalg.norm(emb)
             return 0
         sim = self.compute_cos_similarity(emb)[0]
+        print(threshold, sim)
         max_sim_index = np.argmax(sim)
 
         if sim[max_sim_index] <= threshold:

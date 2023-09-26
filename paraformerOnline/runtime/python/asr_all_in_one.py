@@ -106,8 +106,7 @@ class AsrAllInOne:
         return segments
 
     def one_sentence_asr(self, audio: np.ndarray):
-        """asr offline + punc
-        """
+        """asr offline + punc"""
         result = self.asr_offline.infer_offline(audio, hot_words=self.hot_words)
         result = self.punc.punctuate(result)[0]
         return result
@@ -126,14 +125,14 @@ class AsrAllInOne:
         speech_length = len(audio)
         sample_offset = 0
         for sample_offset in range(
-                0, speech_length, min(step, speech_length - sample_offset)
+            0, speech_length, min(step, speech_length - sample_offset)
         ):
             if sample_offset + step >= speech_length - 1:
                 step = speech_length - sample_offset
                 is_final = True
             else:
                 is_final = False
-            chunk = audio[sample_offset: sample_offset + step]
+            chunk = audio[sample_offset : sample_offset + step]
             vad_pre_idx += len(chunk)
             segments_result = self.vad.segments_online(chunk, is_final=is_final)
             start_frame = 0
@@ -147,10 +146,12 @@ class AsrAllInOne:
                 if end != -1:
                     end_frame = end * 16
                     end_ms = end
-                    data = np.array(audio[start_ms * 16: end_frame])
+                    data = np.array(audio[start_ms * 16 : end_frame])
                     time_start = time.time()
                     asr_offline_final = self.asr_offline.infer_offline(data)
-                    logger.debug(f"asr offline inference use {time.time() - time_start} s")
+                    logger.debug(
+                        f"asr offline inference use {time.time() - time_start} s"
+                    )
                     if self.speaker_verification:
                         time_start = time.time()
                         speaker_id = self.sv.recognize(data)
@@ -161,13 +162,12 @@ class AsrAllInOne:
                     self.speech_start = False
                     time_start = time.time()
                     _final = self.punc.punctuate(asr_offline_final)[0]
-                    logger.debug(f"punc online inference use {time.time() - time_start} s")
+                    logger.debug(
+                        f"punc online inference use {time.time() - time_start} s"
+                    )
 
                     result["text"] = _final
-                    result['time_stamp'] = {
-                        'start': start_ms,
-                        'end': end_ms
-                    }
+                    result["time_stamp"] = {"start": start_ms, "end": end_ms}
 
                     if is_final:
                         self.reset_asr()
@@ -215,7 +215,9 @@ class AsrAllInOne:
                 end = self.end_frame + len(self.frames) - self.vad_pre_idx
                 data = np.array(self.frames[:end])
                 self.frames = self.frames[end:]
-                asr_offline_final = self.asr_offline.infer_offline(data, hot_words=(hot_words or self.hot_words))
+                asr_offline_final = self.asr_offline.infer_offline(
+                    data, hot_words=(hot_words or self.hot_words)
+                )
                 logger.debug(f"asr offline inference use {time.time() - time_start} s")
                 if self.speaker_verification:
                     time_start = time.time()
@@ -235,10 +237,7 @@ class AsrAllInOne:
         if final is not None:
             result["final"] = final
             result["partial"] = ""
-            result['time_stamp'] = {
-                'start': time_stamp_start,
-                'end': time_stamp_end
-            }
+            result["time_stamp"] = {"start": time_stamp_start, "end": time_stamp_end}
             if self.speaker_verification:
                 result["speaker_id"] = speaker_id
             self.text_cache = ""

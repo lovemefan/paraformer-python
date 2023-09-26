@@ -26,11 +26,11 @@ class SpeakerVerificationInfer:
         project_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
         model_dir = os.path.join(project_dir, "onnx", "sv")
         model_path = model_path or os.path.join(model_dir, model_names[model_name][1])
-
+        self.threshold = threshold
         self.model = model_names[model_name][0](model_path, threshold)
 
     def register_speaker(self, emb: np.ndarray):
-        self.model.recognize(emb)
+        self.model.register_speaker(emb)
 
     def recognize(self, waveform: Union[str, Path, bytes]):
-        return self.model.recognize(waveform)
+        return self.model.recognize(waveform, self.threshold)
