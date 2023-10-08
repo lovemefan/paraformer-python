@@ -29,6 +29,9 @@ class AsrAllInOne:
         sv_threshold=0.6,
         sv_max_start_silence_time=3000,
         vad_speech_max_length=20000,
+        vad_speech_noise_thresh_low=-0.1,
+        vad_speech_noise_thresh_high=0.3,
+        vad_speech_noise_thresh=0.6,
         hot_words="",
     ):
         """
@@ -63,12 +66,22 @@ class AsrAllInOne:
             self.vad = FSMNVadOnline()
             self.vad.vad.vad_opts.max_single_segment_time = vad_speech_max_length
             self.vad.vad.vad_opts.max_start_silence_time = sv_max_start_silence_time
+            self.vad.vad.vad_opts.speech_noise_thresh_low = vad_speech_noise_thresh_low
+            self.vad.vad.vad_opts.speech_noise_thresh_high = (
+                vad_speech_noise_thresh_high
+            )
+            self.vad.vad.vad_opts.speech_noise_thresh = vad_speech_noise_thresh
             self.punc = CttPunctuator(online=True)
             self.text_cache = ""
 
         elif mode == "file_transcription":
             self.asr_offline = ParaformerOffline()
             self.vad = FSMNVadOnline()
+            self.vad.vad.vad_opts.speech_noise_thresh_low = vad_speech_noise_thresh_low
+            self.vad.vad.vad_opts.speech_noise_thresh_high = (
+                vad_speech_noise_thresh_high
+            )
+            self.vad.vad.vad_opts.speech_noise_thresh = vad_speech_noise_thresh
             self.vad.vad.vad_opts.max_single_segment_time = vad_speech_max_length
             self.vad.vad.vad_opts.max_start_silence_time = sv_max_start_silence_time
             self.punc = CttPunctuator(online=False)
