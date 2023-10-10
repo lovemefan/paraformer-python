@@ -4,7 +4,7 @@
 # @Author    :lovemefan
 # @Email     :lovemefan@outlook.com
 
-from paraformerOnline import SpeakerVerificationInfer
+from paraformer import SpeakerVerificationInfer
 
 
 def test():

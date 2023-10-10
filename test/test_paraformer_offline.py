@@ -5,8 +5,7 @@
 # @Email     :lovemefan@outlook.com
 import logging
 
-from paraformerOnline import (AudioReader, CttPunctuator, FSMNVad,
-                              ParaformerOffline)
+from paraformer import AudioReader, CttPunctuator, FSMNVad, ParaformerOffline
 
 logging.basicConfig(
     level=logging.INFO,
@@ -15,7 +14,7 @@ logging.basicConfig(
 
 if __name__ == "__main__":
     logging.info("Testing offline asr")
-    wav_path = "vad_example.wav"
+    wav_path = "test/vad_example.wav"
     speech, sample_rate = AudioReader.read_wav_file(wav_path)
     model = ParaformerOffline()
     vad = FSMNVad()

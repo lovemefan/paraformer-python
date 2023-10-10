@@ -3,7 +3,7 @@
 # @Time      :2023/9/6 16:19
 # @Author    :lovemefan
 # @Email     :lovemefan@outlook.com
-from paraformerOnline import AudioReader, FSMNVad
+from paraformer import AudioReader, FSMNVad
 
 if __name__ == "__main__":
     speech, sample_rate = AudioReader.read_wav_file("test/vad_example.wav")

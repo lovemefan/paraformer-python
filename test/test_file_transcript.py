@@ -5,7 +5,7 @@
 # @Email     :lovemefan@outlook.com
 import logging
 
-from paraformerOnline import AsrAllInOne, AudioReader
+from paraformer import AsrAllInOne, AudioReader
 
 logging.basicConfig(
     level=logging.INFO,
@@ -14,7 +14,7 @@ logging.basicConfig(
 
 if __name__ == "__main__":
     logging.info("Testing online asr")
-    wav_path = "/Users/cenglingfan/Downloads/邓丽霞.wav"
+    wav_path = "test/vad_example.wav"
     speech, sample_rate = AudioReader.read_wav_file(wav_path)
 
     model = AsrAllInOne(

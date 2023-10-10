@@ -13,7 +13,7 @@ import time
 from jiwer import cer
 from tqdm import tqdm
 
-from paraformerOnline import AudioReader, ParaformerOffline
+from paraformer import AudioReader, ParaformerOffline
 
 _LOG_FILE_DIR = "logs"
 

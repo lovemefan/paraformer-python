@@ -5,8 +5,8 @@
 # @Email     :lovemefan@outlook.com
 
 
-from paraformerOnline import CttPunctuator
-from paraformerOnline.runtime.python.utils.logger import logger
+from paraformer import CttPunctuator
+from paraformer.runtime.python.utils.logger import logger
 
 # offline mode
 punc = CttPunctuator()
