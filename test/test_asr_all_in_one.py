@@ -23,7 +23,7 @@ def start_asr():
         hot_words="任意热词 空格隔开",
     )
     logging.info("Testing online asr")
-    wav_path = "P9_0002.wav"
+    wav_path = "test/P9_0002.wav"
     speech, sample_rate = AudioReader.read_wav_file(wav_path)
     speech_length = speech.shape[0]
     sample_offset = 0
