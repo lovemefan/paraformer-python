@@ -19,7 +19,6 @@ from onnxruntime import (GraphOptimizationLevel, InferenceSession,
 from paraformerOnline.runtime.python.utils.singleton import singleton
 
 
-@singleton
 class VadOrtInferRuntimeSession:
     def __init__(self, config, root_dir: Path):
         sess_opt = SessionOptions()
