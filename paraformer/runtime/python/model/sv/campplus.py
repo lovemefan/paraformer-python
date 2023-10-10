@@ -6,8 +6,8 @@ import kaldi_native_fbank as knf
 import numpy as np
 import onnxruntime
 
-from paraformerOnline.runtime.python.utils.audioHelper import AudioReader
-from paraformerOnline.runtime.python.utils.singleton import singleton
+from paraformer.runtime.python.utils.audioHelper import AudioReader
+from paraformer.runtime.python.utils.singleton import singleton
 
 
 @singleton
@@ -105,7 +105,6 @@ class Campplus:
             self.memory = emb / np.linalg.norm(emb)
             return 0
         sim = self.compute_cos_similarity(emb)[0]
-        print(threshold, sim)
         max_sim_index = np.argmax(sim)
 
         if sim[max_sim_index] <= threshold:

@@ -9,8 +9,8 @@ from typing import Union
 
 import numpy as np
 
-from paraformerOnline.runtime.python.model.sv.campplus import Campplus
-from paraformerOnline.runtime.python.model.sv.eres2net import Eres2net
+from paraformer.runtime.python.model.sv.campplus import Campplus
+from paraformer.runtime.python.model.sv.eres2net import Eres2net
 
 model_names = {
     "cam++": (Campplus, "campplus.onnx"),

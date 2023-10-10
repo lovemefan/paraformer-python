@@ -4,28 +4,30 @@
 # @Author    :lovemefan
 # @Email     :lovemefan@outlook.com
 import logging
+import threading
 
-from paraformerOnline import AsrAllInOne, AudioReader
+from paraformer import AsrAllInOne, AudioReader
 
 logging.basicConfig(
     level=logging.INFO,
-    format="[%(asctime)s %(levelname)s] [%(filename)s:%(lineno)d %(module)s.%(funcName)s] %(message)s",
+    format="[%(asctime)s %(levelname)s]-[%(thread)d]- [%(filename)s:%(lineno)d %(module)s.%(funcName)s] %(message)s",
 )
 
-if __name__ == "__main__":
-    logging.info("Testing online asr")
-    wav_path = "test/P9_0002.wav"
-    speech, sample_rate = AudioReader.read_wav_file(wav_path)
-    speech_length = speech.shape[0]
-    sample_offset = 0
-    step = 9600
+
+def start_asr():
     model = AsrAllInOne(
         mode="2pass",
         speaker_verification=True,
         sv_threshold=0.75,
         sv_model_name="cam++",
-        hot_words='任意热词 空格隔开'
+        hot_words="任意热词 空格隔开",
     )
+    logging.info("Testing online asr")
+    wav_path = "P9_0002.wav"
+    speech, sample_rate = AudioReader.read_wav_file(wav_path)
+    speech_length = speech.shape[0]
+    sample_offset = 0
+    step = 9600
 
     final_result = ""
     for sample_offset in range(
@@ -41,3 +43,18 @@ if __name__ == "__main__":
         )
 
         logging.info(rec_result)
+
+
+def process_multithread(number):
+    thread_list = []
+    for i in range(0, number):
+        thread = threading.Thread(target=start_asr, args=())
+        thread_list.append(thread)
+        thread.start()
+
+    for thread in thread_list:
+        thread.join()
+
+
+if __name__ == "__main__":
+    process_multithread(3)

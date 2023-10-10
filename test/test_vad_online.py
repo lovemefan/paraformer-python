@@ -8,7 +8,7 @@ from paraformerOnline import AudioReader, FSMNVadOnline
 
 # online
 in_cache = []
-speech, sample_rate = AudioReader.read_wav_file("test/vad_example.wav")
+speech, sample_rate = AudioReader.read_wav_file("vad_example.wav")
 speech_length = speech.shape[0]
 
 sample_offset = 0

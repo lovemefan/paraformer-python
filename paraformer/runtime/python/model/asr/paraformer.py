@@ -10,15 +10,23 @@ from typing import List, Tuple, Union
 
 import numpy as np
 
-from paraformerOnline.runtime.python.utils.asrOrtInferRuntimeSession import (
-    AsrOfflineOrtInferRuntimeSession, AsrOnlineOrtInferRuntimeSession,
-    CharTokenizer, Hypothesis, TokenIDConverter, read_yaml)
-from paraformerOnline.runtime.python.utils.audioHelper import AudioReader
-from paraformerOnline.runtime.python.utils.postprocess import \
-    sentence_postprocess
-from paraformerOnline.runtime.python.utils.preprocess import (
-    SinusoidalPositionEncoderOnline, WavFrontend, WavFrontendOnline)
-from paraformerOnline.runtime.python.utils.singleton import singleton
+from paraformer.runtime.python.utils.asrOrtInferRuntimeSession import (
+    AsrOfflineOrtInferRuntimeSession,
+    AsrOnlineEncoderOrtInferRuntimeSession,
+    AsrOnlineDecoderOrtInferRuntimeSession,
+    CharTokenizer,
+    Hypothesis,
+    TokenIDConverter,
+    read_yaml,
+)
+from paraformer.runtime.python.utils.audioHelper import AudioReader
+from paraformer.runtime.python.utils.postprocess import sentence_postprocess
+from paraformer.runtime.python.utils.preprocess import (
+    SinusoidalPositionEncoderOnline,
+    WavFrontend,
+    WavFrontendOnline,
+)
+from paraformer.runtime.python.utils.singleton import singleton
 
 
 @singleton
@@ -53,10 +61,10 @@ class ParaformerOnlineModel:
             cmvn_file=cmvn_file, **config["frontend_conf"]
         )
         self.pe = SinusoidalPositionEncoderOnline()
-        self.ort_encoder_infer = AsrOnlineOrtInferRuntimeSession(
+        self.ort_encoder_infer = AsrOnlineEncoderOrtInferRuntimeSession(
             encoder_model_file, device_id, intra_op_num_threads=intra_op_num_threads
         )
-        self.ort_decoder_infer = AsrOnlineOrtInferRuntimeSession(
+        self.ort_decoder_infer = AsrOnlineDecoderOrtInferRuntimeSession(
             decoder_model_file, device_id, intra_op_num_threads=intra_op_num_threads
         )
         self.batch_size = batch_size
@@ -335,7 +343,6 @@ class ParaformerOnlineModel:
         ).astype(np.int32)
 
 
-@singleton
 class ParaformerOfflineModel:
     def __init__(self, model_dir: str = None, intra_op_num_threads=4) -> None:
         config_path = os.path.join(model_dir, "config.yaml")

@@ -14,7 +14,7 @@ logging.basicConfig(
 
 if __name__ == "__main__":
     logging.info("Testing online asr")
-    wav_path = "test/P9_0002.wav"
+    wav_path = "P9_0002.wav"
     speech, sample_rate = AudioReader.read_wav_file(wav_path)
     speech_length = speech.shape[0]
     sample_offset = 0

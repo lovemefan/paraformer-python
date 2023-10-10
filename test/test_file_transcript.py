@@ -14,15 +14,16 @@ logging.basicConfig(
 
 if __name__ == "__main__":
     logging.info("Testing online asr")
-    wav_path = "test/vad_example.wav"
+    wav_path = "/Users/cenglingfan/Downloads/邓丽霞.wav"
     speech, sample_rate = AudioReader.read_wav_file(wav_path)
 
     model = AsrAllInOne(
         mode="file_transcription",
         speaker_verification=True,
-        sv_threshold=0.75,
+        sv_threshold=0.58,
         sv_model_name="cam++",
         hot_words="任意热词 空格隔开",
+        vad_speech_max_length=10000,
     )
 
     results = model.file_transcript(speech)

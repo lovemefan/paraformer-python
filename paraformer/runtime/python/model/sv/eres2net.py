@@ -8,8 +8,8 @@ import os
 import numpy as np
 import onnxruntime
 
-from paraformerOnline.runtime.python.model.sv.campplus import Campplus
-from paraformerOnline.runtime.python.utils.singleton import singleton
+from paraformer.runtime.python.model.sv.campplus import Campplus
+from paraformer.runtime.python.utils.singleton import singleton
 
 campplus_class = Campplus().__class__
 

@@ -1,11 +1,6 @@
 # -*- coding:utf-8 -*-
-# @FileName  :vadOrtInferSession.py
-# @Time      :2023/8/9 09:25
-# @Author    :lovemefan
-# @Email     :lovemefan@outlook.com
-# -*- coding:utf-8 -*-
-# @FileName  :VadOrtInferSession.py
-# @Time      :2023/4/3 18:09
+# @FileName  :OrtInferSession.py
+# @Time      :2023/4/13 15:13
 # @Author    :lovemefan
 # @Email     :lovemefan@outlook.com
 import logging
@@ -13,20 +8,38 @@ from pathlib import Path
 from typing import List, Union
 
 import numpy as np
-from onnxruntime import (GraphOptimizationLevel, InferenceSession,
-                         SessionOptions, get_available_providers, get_device)
+from onnxruntime import (
+    GraphOptimizationLevel,
+    InferenceSession,
+    SessionOptions,
+    get_available_providers,
+    get_device,
+)
 
-from paraformerOnline.runtime.python.utils.singleton import singleton
+from paraformer.runtime.python.utils.singleton import singleton
 
 
-class VadOrtInferRuntimeSession:
-    def __init__(self, config, root_dir: Path):
+class ONNXRuntimeError(Exception):
+    pass
+
+
+@singleton
+class PuncOrtInferRuntimeSession:
+    def __init__(self, model_file, device_id=-1, intra_op_num_threads=4):
+        device_id = str(device_id)
         sess_opt = SessionOptions()
+        sess_opt.intra_op_num_threads = intra_op_num_threads
         sess_opt.log_severity_level = 4
         sess_opt.enable_cpu_mem_arena = False
         sess_opt.graph_optimization_level = GraphOptimizationLevel.ORT_ENABLE_ALL
 
         cuda_ep = "CUDAExecutionProvider"
+        cuda_provider_options = {
+            "device_id": device_id,
+            "arena_extend_strategy": "kNextPowerOfTwo",
+            "cudnn_conv_algo_search": "EXHAUSTIVE",
+            "do_copy_in_default_stream": "true",
+        }
         cpu_ep = "CPUExecutionProvider"
         cpu_provider_options = {
             "arena_extend_strategy": "kSameAsRequested",
@@ -34,27 +47,31 @@ class VadOrtInferRuntimeSession:
 
         EP_list = []
         if (
-            config["use_cuda"]
+            device_id != "-1"
             and get_device() == "GPU"
             and cuda_ep in get_available_providers()
         ):
-            EP_list = [(cuda_ep, config[cuda_ep])]
+            EP_list = [(cuda_ep, cuda_provider_options)]
         EP_list.append((cpu_ep, cpu_provider_options))
 
-        config["model_path"] = root_dir / str(config["model_path"])
-        self._verify_model(config["model_path"])
-        logging.info(f"Loading onnx model at {str(config['model_path'])}")
+        if isinstance(model_file, list):
+            merged_model_file = b""
+            for file in sorted(model_file):
+                with open(file, "rb") as onnx_file:
+                    merged_model_file += onnx_file.read()
+
+            model_file = merged_model_file
+        else:
+            self._verify_model(model_file)
         self.session = InferenceSession(
-            str(config["model_path"]), sess_options=sess_opt, providers=EP_list
+            model_file, sess_options=sess_opt, providers=EP_list
         )
 
-        if config["use_cuda"] and cuda_ep not in self.session.get_providers():
-            logging.warning(
-                f"{cuda_ep} is not available for current env, "
-                f"the inference part is automatically shifted to be "
-                f"executed under {cpu_ep}.\n "
-                "Please ensure the installed onnxruntime-gpu version"
-                " matches your cuda and cudnn version, "
+        if device_id != "-1" and cuda_ep not in self.session.get_providers():
+            logging.warnings.warn(
+                f"{cuda_ep} is not avaiable for current env, "
+                f"the inference part is automatically shifted to be executed under {cpu_ep}.\n"
+                "Please ensure the installed onnxruntime-gpu version matches your cuda and cudnn version, "
                 "you can check their relations from the offical web site: "
                 "https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html",
                 RuntimeWarning,
@@ -63,18 +80,11 @@ class VadOrtInferRuntimeSession:
     def __call__(
         self, input_content: List[Union[np.ndarray, np.ndarray]]
     ) -> np.ndarray:
-        if isinstance(input_content, list):
-            input_dict = {
-                "speech": input_content[0],
-                "in_cache0": input_content[1],
-                "in_cache1": input_content[2],
-                "in_cache2": input_content[3],
-                "in_cache3": input_content[4],
-            }
-        else:
-            input_dict = {"speech": input_content}
-
-        return self.session.run(None, input_dict)
+        input_dict = dict(zip(self.get_input_names(), input_content))
+        try:
+            return self.session.run(self.get_output_names(), input_dict)
+        except Exception as e:
+            raise ONNXRuntimeError("ONNXRuntime inferece failed.") from e
 
     def get_input_names(
         self,

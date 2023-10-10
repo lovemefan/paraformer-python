@@ -9,14 +9,20 @@ from typing import Tuple, Union
 
 import numpy as np
 
-from paraformerOnline.runtime.python.utils.asrOrtInferRuntimeSession import (
-    TokenIDConverter, code_mix_split_words, split_to_mini_sentence)
-from paraformerOnline.runtime.python.utils.logger import logger
-from paraformerOnline.runtime.python.utils.puncOrtInferRuntimeSession import (
-    ONNXRuntimeError, PuncOrtInferRuntimeSession)
-from paraformerOnline.runtime.python.utils.singleton import singleton
+from paraformer.runtime.python.utils.asrOrtInferRuntimeSession import (
+    TokenIDConverter,
+    code_mix_split_words,
+    split_to_mini_sentence,
+)
+from paraformer.runtime.python.utils.logger import logger
+from paraformer.runtime.python.utils.puncOrtInferRuntimeSession import (
+    ONNXRuntimeError,
+    PuncOrtInferRuntimeSession,
+)
+from paraformer.runtime.python.utils.singleton import singleton
 
 
+@singleton
 class CT_Transformer:
     """
     Author: Speech Lab, Alibaba Group, China
@@ -168,7 +174,7 @@ class CT_Transformer:
 
 
 @singleton
-class CT_Transformer_VadRealtime(CT_Transformer):
+class CT_Transformer_VadRealtime:
     """
     Author: Speech Lab, Alibaba Group, China
     CT-Transformer: Controllable time-delay transformer for
@@ -181,12 +187,48 @@ class CT_Transformer_VadRealtime(CT_Transformer):
         model_dir: Union[str, Path] = None,
         batch_size: int = 1,
         device_id: Union[str, int] = "-1",
-        quantize: bool = False,
+        quantize: bool = True,
         intra_op_num_threads: int = 4,
     ):
-        super().__init__(
-            model_dir, batch_size, device_id, quantize, intra_op_num_threads
+        project_dir = os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
         )
+        model_dir = model_dir or os.path.join(project_dir, "onnx", "punc")
+
+        if model_dir is None or not Path(model_dir).exists():
+            raise FileNotFoundError(f"{model_dir} does not exist.")
+
+        if not os.path.exists(os.path.join(model_dir, "model_quant.onnx")):
+            model_file = glob.glob(os.path.join(model_dir, "model_quant_*.onnx"))
+            # model_file = b""
+            # for file in sorted(model_files):
+            #     with open(file, 'rb') as model_split:
+            #         model_file += model_split.read()
+        else:
+            model_file = os.path.join(model_dir, "model_quant.onnx")
+
+        config_file = os.path.join(model_dir, "config.pkl")
+        logger.info(f"Loading config file {config_file}")
+        start = time.time()
+        with open(config_file, "rb") as file:
+            config = pickle.load(file)
+        logger.info(
+            f"Loading config file {config_file} finished, takes {time.time() - start} s"
+        )
+        self.converter = TokenIDConverter(config["token_list"])
+        self.ort_infer = PuncOrtInferRuntimeSession(
+            model_file, device_id, intra_op_num_threads=intra_op_num_threads
+        )
+        self.batch_size = 1
+        self.punc_list = config["punc_list"]
+        self.period = 0
+        for i in range(len(self.punc_list)):
+            if self.punc_list[i] == ",":
+                self.punc_list[i] = "，"
+            elif self.punc_list[i] == "?":
+                self.punc_list[i] = "？"
+            elif self.punc_list[i] == "。":
+                self.period = i
 
     def __call__(self, text: str, param_dict: map, split_size=20):
         cache_key = "cache"

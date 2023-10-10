@@ -13,10 +13,15 @@ from typing import Any, Dict, Iterable, List, NamedTuple, Set, Union
 import jieba
 import numpy as np
 import yaml
-from onnxruntime import (GraphOptimizationLevel, InferenceSession,
-                         SessionOptions, get_available_providers, get_device)
+from onnxruntime import (
+    GraphOptimizationLevel,
+    InferenceSession,
+    SessionOptions,
+    get_available_providers,
+    get_device,
+)
 
-from paraformerOnline.runtime.python.utils.singleton import singleton
+from paraformer.runtime.python.utils.singleton import singleton
 
 root_dir = Path(__file__).resolve().parent
 
@@ -127,7 +132,7 @@ class ONNXRuntimeError(Exception):
     pass
 
 
-class AsrOnlineOrtInferRuntimeSession:
+class AsrOnlineBaseOrtInferRuntimeSession:
     def __init__(self, model_file, device_id=-1, intra_op_num_threads=4):
         device_id = str(device_id)
         sess_opt = SessionOptions()
@@ -215,6 +220,18 @@ class AsrOnlineOrtInferRuntimeSession:
             raise FileNotFoundError(f"{model_path} does not exists.")
         if not model_path.is_file():
             raise FileExistsError(f"{model_path} is not a file.")
+
+
+@singleton
+class AsrOnlineEncoderOrtInferRuntimeSession(AsrOnlineBaseOrtInferRuntimeSession):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+@singleton
+class AsrOnlineDecoderOrtInferRuntimeSession(AsrOnlineBaseOrtInferRuntimeSession):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
 
 @singleton

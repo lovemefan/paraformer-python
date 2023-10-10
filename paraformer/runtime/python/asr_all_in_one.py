@@ -7,12 +7,14 @@ import time
 
 import numpy as np
 
-from paraformerOnline.runtime.python.cttPunctuator import CttPunctuator
-from paraformerOnline.runtime.python.fsmnVadInfer import FSMNVadOnline
-from paraformerOnline.runtime.python.paraformerInfer import (ParaformerOffline,
-                                                             ParaformerOnline)
-from paraformerOnline.runtime.python.svInfer import SpeakerVerificationInfer
-from paraformerOnline.runtime.python.utils.logger import logger
+from paraformer.runtime.python.cttPunctuator import CttPunctuator
+from paraformer.runtime.python.fsmnVadInfer import FSMNVadOnline
+from paraformer.runtime.python.paraformerInfer import (
+    ParaformerOffline,
+    ParaformerOnline,
+)
+from paraformer.runtime.python.svInfer import SpeakerVerificationInfer
+from paraformer.runtime.python.utils.logger import logger
 
 mode_available = ["offline", "file_transcription", "online", "2pass"]
 

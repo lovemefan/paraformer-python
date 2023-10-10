@@ -7,9 +7,11 @@ import os.path
 
 import numpy as np
 
-from paraformerOnline.runtime.python.model.asr.paraformer import (
-    ParaformerOfflineModel, ParaformerOnlineModel)
-from paraformerOnline.runtime.python.utils.logger import logger
+from paraformer.runtime.python.model.asr.paraformer import (
+    ParaformerOfflineModel,
+    ParaformerOnlineModel,
+)
+from paraformer.runtime.python.utils.logger import logger
 
 
 class ParaformerOnline:
