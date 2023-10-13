@@ -5,6 +5,7 @@
 # @Email     :lovemefan@outlook.com
 import glob
 import os
+import pickle
 from pathlib import Path
 from typing import List, Tuple, Union
 
@@ -12,24 +13,23 @@ import numpy as np
 
 from paraformer.runtime.python.utils.asrOrtInferRuntimeSession import (
     AsrOfflineOrtInferRuntimeSession,
-    AsrOnlineEncoderOrtInferRuntimeSession,
     AsrOnlineDecoderOrtInferRuntimeSession,
+    AsrOnlineEncoderOrtInferRuntimeSession,
     CharTokenizer,
     Hypothesis,
     TokenIDConverter,
-    read_yaml,
 )
 from paraformer.runtime.python.utils.audioHelper import AudioReader
+from paraformer.runtime.python.utils.logger import logger
 from paraformer.runtime.python.utils.postprocess import sentence_postprocess
 from paraformer.runtime.python.utils.preprocess import (
     SinusoidalPositionEncoderOnline,
     WavFrontend,
     WavFrontendOnline,
 )
-from paraformer.runtime.python.utils.singleton import singleton
+from paraformer.runtime.python.utils.singleton import get_all_instance, singleton
 
 
-@singleton
 class ParaformerOnlineModel:
     def __init__(
         self,
@@ -40,33 +40,51 @@ class ParaformerOnlineModel:
         quantize: bool = False,
         intra_op_num_threads: int = 4,
     ):
-        if not Path(model_dir).exists():
-            raise FileNotFoundError(f"{model_dir} is not exist")
-
-        encoder_model_file = os.path.join(model_dir, "model.onnx")
-        decoder_model_file = os.path.join(model_dir, "decoder.onnx")
-        if quantize:
-            encoder_model_file = glob.glob(
-                os.path.join(model_dir, "model_quant_*.onnx")
-            )
-            decoder_model_file = os.path.join(model_dir, "decoder_quant.onnx")
-
-        config_file = os.path.join(model_dir, "config.yaml")
+        logger.info(f"init online context for client")
+        config_file = os.path.join(model_dir, "config.pkl")
+        with open(config_file, "rb") as file:
+            config = pickle.load(file)
         cmvn_file = os.path.join(model_dir, "am.mvn")
-        config = read_yaml(config_file)
 
         self.converter = TokenIDConverter(config["token_list"])
         self.tokenizer = CharTokenizer()
         self.frontend = WavFrontendOnline(
             cmvn_file=cmvn_file, **config["frontend_conf"]
         )
-        self.pe = SinusoidalPositionEncoderOnline()
-        self.ort_encoder_infer = AsrOnlineEncoderOrtInferRuntimeSession(
-            encoder_model_file, device_id, intra_op_num_threads=intra_op_num_threads
-        )
-        self.ort_decoder_infer = AsrOnlineDecoderOrtInferRuntimeSession(
-            decoder_model_file, device_id, intra_op_num_threads=intra_op_num_threads
-        )
+
+        if (
+            "AsrOnlineEncoderOrtInferRuntimeSession" not in get_all_instance()
+            and "AsrOnlineDecoderOrtInferRuntimeSession" not in get_all_instance()
+        ):
+            if not Path(model_dir).exists():
+                raise FileNotFoundError(f"{model_dir} is not exist")
+
+            encoder_model_file = os.path.join(model_dir, "model.onnx")
+            decoder_model_file = os.path.join(model_dir, "decoder.onnx")
+            if quantize:
+                encoder_model_file = glob.glob(
+                    os.path.join(model_dir, "model_quant_*.onnx")
+                )
+                decoder_model_file = os.path.join(model_dir, "decoder_quant.onnx")
+
+            self.pe = SinusoidalPositionEncoderOnline()
+
+            self.ort_encoder_infer = AsrOnlineEncoderOrtInferRuntimeSession(
+                encoder_model_file, device_id, intra_op_num_threads=intra_op_num_threads
+            )
+            self.ort_decoder_infer = AsrOnlineDecoderOrtInferRuntimeSession(
+                decoder_model_file, device_id, intra_op_num_threads=intra_op_num_threads
+            )
+        else:
+            self.pe = SinusoidalPositionEncoderOnline()
+
+            self.ort_encoder_infer = get_all_instance().get(
+                "AsrOnlineEncoderOrtInferRuntimeSession"
+            )
+            self.ort_decoder_infer = get_all_instance().get(
+                "AsrOnlineDecoderOrtInferRuntimeSession"
+            )
+
         self.batch_size = batch_size
         self.chunk_size = chunk_size
         self.encoder_output_size = config["encoder_conf"]["output_size"]
@@ -343,11 +361,12 @@ class ParaformerOnlineModel:
         ).astype(np.int32)
 
 
+@singleton
 class ParaformerOfflineModel:
     def __init__(self, model_dir: str = None, intra_op_num_threads=4) -> None:
-        config_path = os.path.join(model_dir, "config.yaml")
-
-        config = read_yaml(config_path)
+        config_path = os.path.join(model_dir, "config.pkl")
+        with open(config_path, "rb") as file:
+            config = pickle.load(file)
 
         self.converter = TokenIDConverter(config["token_list"])
         self.tokenizer = CharTokenizer(**config["CharTokenizer"])

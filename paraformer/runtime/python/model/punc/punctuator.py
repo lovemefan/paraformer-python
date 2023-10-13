@@ -10,15 +10,10 @@ from typing import Tuple, Union
 import numpy as np
 
 from paraformer.runtime.python.utils.asrOrtInferRuntimeSession import (
-    TokenIDConverter,
-    code_mix_split_words,
-    split_to_mini_sentence,
-)
+    TokenIDConverter, code_mix_split_words, split_to_mini_sentence)
 from paraformer.runtime.python.utils.logger import logger
 from paraformer.runtime.python.utils.puncOrtInferRuntimeSession import (
-    ONNXRuntimeError,
-    PuncOrtInferRuntimeSession,
-)
+    ONNXRuntimeError, PuncOrtInferRuntimeSession)
 from paraformer.runtime.python.utils.singleton import singleton
 
 
@@ -49,10 +44,7 @@ class CT_Transformer:
 
         if not os.path.exists(os.path.join(model_dir, "model_quant.onnx")):
             model_file = glob.glob(os.path.join(model_dir, "model_quant_*.onnx"))
-            # model_file = b""
-            # for file in sorted(model_files):
-            #     with open(file, 'rb') as model_split:
-            #         model_file += model_split.read()
+
         else:
             model_file = os.path.join(model_dir, "model_quant.onnx")
 
@@ -65,9 +57,7 @@ class CT_Transformer:
             f"Loading config file {config_file} finished, takes {time.time() - start} s"
         )
         self.converter = TokenIDConverter(config["token_list"])
-        self.ort_infer = PuncOrtInferRuntimeSession(
-            model_file, device_id, intra_op_num_threads=intra_op_num_threads
-        )
+        self.ort_infer = PuncOrtInferRuntimeSession(model_file, device_id)
         self.batch_size = 1
         self.punc_list = config["punc_list"]
         self.period = 0
@@ -79,7 +69,7 @@ class CT_Transformer:
             elif self.punc_list[i] == "。":
                 self.period = i
 
-    def __call__(self, text: Union[list, str], split_size=20):
+    def offline(self, text: Union[list, str], split_size=20):
         split_text = code_mix_split_words(text)
         split_text_id = self.converter.tokens2ids(split_text)
         mini_sentences = split_to_mini_sentence(split_text, split_size)
@@ -103,7 +93,7 @@ class CT_Transformer:
                 "text_lengths": text_lengths,
             }
             try:
-                outputs = self.infer(data["text"], data["text_lengths"])
+                outputs = self.offline_infer(data["text"], data["text_lengths"])
                 y = outputs[0]
                 punctuations = np.argmax(y, axis=-1)[0]
                 assert punctuations.size == len(mini_sentence)
@@ -166,71 +156,25 @@ class CT_Transformer:
                     ]
         return new_mini_sentence_out, new_mini_sentence_punc_out
 
-    def infer(
+    def offline_infer(
         self, feats: np.ndarray, feats_len: np.ndarray
     ) -> Tuple[np.ndarray, np.ndarray]:
         outputs = self.ort_infer([feats.astype("int32"), feats_len])
         return outputs
 
-
-@singleton
-class CT_Transformer_VadRealtime:
-    """
-    Author: Speech Lab, Alibaba Group, China
-    CT-Transformer: Controllable time-delay transformer for
-    real-time punctuation prediction and disfluency detection
-    https://arxiv.org/pdf/2003.01309.pdf
-    """
-
-    def __init__(
+    def online_infer(
         self,
-        model_dir: Union[str, Path] = None,
-        batch_size: int = 1,
-        device_id: Union[str, int] = "-1",
-        quantize: bool = True,
-        intra_op_num_threads: int = 4,
-    ):
-        project_dir = os.path.dirname(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+        feats: np.ndarray,
+        feats_len: np.ndarray,
+        vad_mask: np.ndarray,
+        sub_masks: np.ndarray,
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        outputs = self.ort_infer(
+            [feats.astype("int32"), feats_len, vad_mask, sub_masks]
         )
-        model_dir = model_dir or os.path.join(project_dir, "onnx", "punc")
+        return outputs
 
-        if model_dir is None or not Path(model_dir).exists():
-            raise FileNotFoundError(f"{model_dir} does not exist.")
-
-        if not os.path.exists(os.path.join(model_dir, "model_quant.onnx")):
-            model_file = glob.glob(os.path.join(model_dir, "model_quant_*.onnx"))
-            # model_file = b""
-            # for file in sorted(model_files):
-            #     with open(file, 'rb') as model_split:
-            #         model_file += model_split.read()
-        else:
-            model_file = os.path.join(model_dir, "model_quant.onnx")
-
-        config_file = os.path.join(model_dir, "config.pkl")
-        logger.info(f"Loading config file {config_file}")
-        start = time.time()
-        with open(config_file, "rb") as file:
-            config = pickle.load(file)
-        logger.info(
-            f"Loading config file {config_file} finished, takes {time.time() - start} s"
-        )
-        self.converter = TokenIDConverter(config["token_list"])
-        self.ort_infer = PuncOrtInferRuntimeSession(
-            model_file, device_id, intra_op_num_threads=intra_op_num_threads
-        )
-        self.batch_size = 1
-        self.punc_list = config["punc_list"]
-        self.period = 0
-        for i in range(len(self.punc_list)):
-            if self.punc_list[i] == ",":
-                self.punc_list[i] = "，"
-            elif self.punc_list[i] == "?":
-                self.punc_list[i] = "？"
-            elif self.punc_list[i] == "。":
-                self.period = i
-
-    def __call__(self, text: str, param_dict: map, split_size=20):
+    def online(self, text: str, param_dict: map, split_size=20):
         cache_key = "cache"
         assert cache_key in param_dict
         cache = param_dict[cache_key]
@@ -270,7 +214,7 @@ class CT_Transformer_VadRealtime:
                 )[None, None, :, :].astype(np.float32),
             }
             try:
-                outputs = self.infer(
+                outputs = self.online_infer(
                     data["input"],
                     data["text_lengths"],
                     data["vad_mask"],
@@ -360,15 +304,3 @@ class CT_Transformer_VadRealtime:
         sub_corner = np.zeros((vad_pos - 1, size - vad_pos), dtype=dtype)
         ret[0 : vad_pos - 1, vad_pos:] = sub_corner
         return ret
-
-    def infer(
-        self,
-        feats: np.ndarray,
-        feats_len: np.ndarray,
-        vad_mask: np.ndarray,
-        sub_masks: np.ndarray,
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        outputs = self.ort_infer(
-            [feats.astype("int32"), feats_len, vad_mask, sub_masks]
-        )
-        return outputs
