@@ -13,13 +13,8 @@ from typing import Any, Dict, Iterable, List, NamedTuple, Set, Union
 import jieba
 import numpy as np
 import yaml
-from onnxruntime import (
-    GraphOptimizationLevel,
-    InferenceSession,
-    SessionOptions,
-    get_available_providers,
-    get_device,
-)
+from onnxruntime import (GraphOptimizationLevel, InferenceSession,
+                         SessionOptions, get_available_providers, get_device)
 
 from paraformer.runtime.python.utils.singleton import singleton
 

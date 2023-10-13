@@ -12,9 +12,8 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 
 from paraformer.runtime.python.utils.logger import logger
-from paraformer.runtime.python.utils.vadOrtInferRuntimeSession import (
-    VadOrtInferRuntimeSession,
-)
+from paraformer.runtime.python.utils.vadOrtInferRuntimeSession import \
+    VadOrtInferRuntimeSession
 
 
 class VadStateMachine(Enum):
