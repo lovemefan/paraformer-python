@@ -11,6 +11,7 @@ from typing import List, Tuple, Union
 
 import numpy as np
 
+from paraformer.runtime.python.model.lm.transformer_lm import TransformerLM
 from paraformer.runtime.python.utils.asrOrtInferRuntimeSession import (
     AsrOfflineOrtInferRuntimeSession,
     AsrOnlineDecoderOrtInferRuntimeSession,
@@ -262,7 +263,7 @@ class ParaformerOnlineModel:
         )
         return feats.astype(np.float32), feats_len.astype(np.int32)
 
-    def decode(self, am_scores: np.ndarray, token_nums: int) -> List[str]:
+    def decode(self, am_scores: np.ndarray, token_nums: int):
         return [
             self.decode_one(am_score, token_num)
             for am_score, token_num in zip(am_scores, token_nums)
@@ -363,11 +364,14 @@ class ParaformerOnlineModel:
 
 @singleton
 class ParaformerOfflineModel:
-    def __init__(self, model_dir: str = None, intra_op_num_threads=4) -> None:
+    def __init__(
+        self, model_dir: str = None, use_lm=False, intra_op_num_threads=4
+    ) -> None:
         config_path = os.path.join(model_dir, "config.pkl")
         with open(config_path, "rb") as file:
             config = pickle.load(file)
 
+        self.use_lm = use_lm
         self.converter = TokenIDConverter(config["token_list"])
         self.tokenizer = CharTokenizer(**config["CharTokenizer"])
         self.frontend = WavFrontend(
@@ -379,6 +383,11 @@ class ParaformerOfflineModel:
             model_file = glob.glob(os.path.join(model_dir, "model_quant_*.onnx"))
 
         contextual_model = os.path.join(model_dir, "model_eb.onnx")
+
+        if use_lm:
+            lm_model_path = os.path.join(model_dir, "lm")
+            self.lm = TransformerLM(lm_model_path, intra_op_num_threads)
+
         self.ort_infer = AsrOfflineOrtInferRuntimeSession(
             model_file,
             contextual_model=contextual_model,
@@ -412,10 +421,78 @@ class ParaformerOfflineModel:
         texts = sentence_postprocess(token)
         return texts
 
-    def decoder_with_beam_search(self, am_score):
-        pass
+    def search(self, beams, am_score: np.ndarray, beam_size=5, lm_weight=0.25):
+        """Search new tokens for running hypotheses and encoded speech x.
 
-    def infer(self, audio: Union[str, np.ndarray, bytes], hot_words: str = None):
+        Args:
+            beams (List[Hypothesis]): Running hypotheses on beam
+            am_score (torch.Tensor): decoded output (L, vocab_size)
+            beam_size: beam size
+            lm_weight: the weight of lm
+
+        """
+        best_hyps = []
+        n_vocab = len(self.converter.token_list)
+        part_ids = np.arange(n_vocab)  # no pre-beam
+        for hyp in beams:
+            # scoring
+            weighted_scores = np.zeros(n_vocab)
+            weighted_scores += am_score
+
+            if self.use_lm:
+                lm_score = self.lm.lm(hyp.yseq[:, -20:])
+                weighted_scores += lm_weight * lm_score[0][0]
+
+            # add previous hyp score
+            weighted_scores += hyp.score
+
+            # update hyps
+            for j in np.argpartition(weighted_scores, -beam_size)[-beam_size:]:
+                # will be (2 x beam at most)
+                best_hyps.append(
+                    Hypothesis(
+                        score=weighted_scores[j],
+                        yseq=np.concatenate(
+                            (hyp.yseq[0], np.array([j], dtype=np.int64))
+                        )[None, ...],
+                    )
+                )
+
+            # sort and prune 2 x beam -> beam
+            best_hyps = sorted(best_hyps, key=lambda x: x.score, reverse=True)[
+                : min(len(best_hyps), beam_size)
+            ]
+        return best_hyps
+
+    def decoder_with_beam_search(self, am_scores, beam_size=5, lm_weight=0.15):
+        # set length bounds
+        # main loop of prefix search
+        beams = [
+            Hypothesis(
+                score=0,
+                yseq=np.array([[1]], dtype=np.int64),
+            )
+        ]
+        for score in am_scores:
+            beams = self.search(beams, score, beam_size=beam_size, lm_weight=lm_weight)
+
+        # remove blank symbol id, which is assumed to be 0
+        token_int = list(filter(lambda x: x not in (0, 2), beams[0].yseq.tolist()[0]))
+
+        # Change integer-ids to tokens
+        token = self.converter.ids2tokens(token_int)
+        texts = sentence_postprocess(token)
+
+        return texts
+
+    def infer(
+        self,
+        audio: Union[str, np.ndarray, bytes],
+        hot_words: str = None,
+        beam_search=False,
+        beam_size=5,
+        lm_weight=0.15,
+    ):
         if isinstance(audio, str):
             audio, _ = AudioReader.read_wav_file(audio)
         elif isinstance(audio, bytes):
@@ -448,7 +525,12 @@ class ParaformerOfflineModel:
 
         results = []
         for am_score in am_scores:
-            pred_res = self.decoder_with_greedy_search(am_score)
+            if beam_search:
+                pred_res = self.decoder_with_beam_search(
+                    am_score, beam_size=beam_size, lm_weight=lm_weight
+                )
+            else:
+                pred_res = self.decoder_with_greedy_search(am_score)
             results.append(pred_res)
         return results if len(results) != 0 else [[""]]
 

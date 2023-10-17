@@ -15,8 +15,10 @@ from paraformer.runtime.python.utils.asrOrtInferRuntimeSession import (
 from paraformer.runtime.python.utils.lmOrtInderRuntimeSession import (
     LMOrtInferRuntimeSession,
 )
+from paraformer.runtime.python.utils.singleton import singleton
 
 
+@singleton
 class TransformerLM:
     def __init__(self, model_dir: str = None, intra_op_num_threads=4):
         tokens_list_path = os.path.join(model_dir, "tokens.txt")
@@ -59,12 +61,11 @@ class TransformerLM:
                 out_txt += "<unk>" + " "
         return out_txt.strip().split()
 
-    def nll_and_ppl(self, text: str):
-        tokens = text.strip().split(" ")
-        if self.segment_dict is not None:
-            tokens = self.seg_tokenize_wo_pattern(tokens, self.segment_dict)
-        text_ints = np.array(self.converter.tokens2ids(tokens), dtype=np.int64)
-
+    def get_nll_and_ppl(self, text_ints):
+        """
+        Args:
+             text_ints
+        """
         # 1. Create a sentence pair like '<sos> w1 w2 w3' and 'w1 w2 w3 <eos>'
         # text: (Batch, Length) -> x, y: (Batch, Length + 1)
         x = np.pad(text_ints, [1, 0], "constant", constant_values=(1,))[None, ...]
@@ -87,3 +88,10 @@ class TransformerLM:
         ppl = np.exp(negative_log_likelihood.mean())
 
         return nll, ppl
+
+    def get_nll_and_ppl_from_text(self, text: str):
+        tokens = text.strip().split(" ")
+        if self.segment_dict is not None:
+            tokens = self.seg_tokenize_wo_pattern(tokens, self.segment_dict)
+        text_ints = np.array(self.converter.tokens2ids(tokens), dtype=np.int64)
+        return self.get_nll_and_ppl(text_ints)

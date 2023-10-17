@@ -8,7 +8,9 @@ import os.path
 import numpy as np
 
 from paraformer.runtime.python.model.asr.paraformer import (
-    ParaformerOfflineModel, ParaformerOnlineModel)
+    ParaformerOfflineModel,
+    ParaformerOnlineModel,
+)
 from paraformer.runtime.python.utils.logger import logger
 
 
@@ -43,24 +45,39 @@ class ParaformerOnline:
 
 
 class ParaformerOffline:
-    def __init__(self, model_dir=None, *, intra_op_num_threads=4):
+    def __init__(self, model_dir=None, *, use_lm=False, intra_op_num_threads=4):
         project_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
         model_dir = model_dir or os.path.join(project_dir, "onnx", "asr_offline")
         logger.info(f"Load onnx model dir at {model_dir}")
         self.model = ParaformerOfflineModel(
-            model_dir, intra_op_num_threads=intra_op_num_threads
+            model_dir, intra_op_num_threads=intra_op_num_threads, use_lm=use_lm
         )
         self.param_dict = {"cache": dict()}
 
-    def infer_offline(self, audio: np.ndarray, hot_words: str = ""):
+    def infer_offline(
+        self,
+        audio: np.ndarray,
+        hot_words: str = "",
+        beam_search=False,
+        beam_size=5,
+        lm_weight=0.15,
+    ):
         """
         Args:
             audio: 600ms is best
             hot_words: hot words split by space . eg `a b cc`
+            beam_search
+            beam_size
 
         Return:
             transcript of audio
         """
-        result = self.model.infer(audio, hot_words)
+        result = self.model.infer(
+            audio,
+            hot_words,
+            beam_search=beam_search,
+            beam_size=beam_size,
+            lm_weight=lm_weight,
+        )
 
         return result[0][0]
