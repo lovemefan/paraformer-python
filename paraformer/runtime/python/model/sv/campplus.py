@@ -82,7 +82,7 @@ class Campplus:
             mat[i, :] = fbank_fn.get_frame(i)
         feature = mat.astype(np.float32)
 
-        feature = feature - feature.mean()
+        feature = feature - feature.mean(0, keepdims=True)
         feature = feature[None, ...]
         return feature
 
@@ -109,5 +109,6 @@ class Campplus:
 
         if sim[max_sim_index] <= threshold:
             self.register_speaker(emb)
+            max_sim_index = len(self.memory) - 1
 
         return max_sim_index
