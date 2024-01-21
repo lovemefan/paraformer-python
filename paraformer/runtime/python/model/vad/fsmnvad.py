@@ -12,8 +12,9 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 
 from paraformer.runtime.python.utils.logger import logger
-from paraformer.runtime.python.utils.vadOrtInferRuntimeSession import \
-    VadOrtInferRuntimeSession
+from paraformer.runtime.python.utils.vadOrtInferRuntimeSession import (
+    VadOrtInferRuntimeSession,
+)
 
 
 class VadStateMachine(Enum):
@@ -249,6 +250,7 @@ class E2EVadModel:
         )
         self.speech_noise_thres = self.vad_opts.speech_noise_thres
         self.scores = None
+        self.scores_offset = 0
         self.max_time_out = False
         self.decibel = []
         self.data_buf_size = 0
@@ -336,10 +338,8 @@ class E2EVadModel:
             scores[0].shape[1] == feats.shape[1]
         ), "The shape between feats and scores does not match"
 
-        if self.scores is None:
-            self.scores = scores[0]  # the first calculation
-        else:
-            self.scores = np.concatenate((self.scores, scores[0]), axis=1)
+        self.scores = scores[0]  # the first calculation
+        self.scores_offset += self.scores.shape[1]
 
         return scores[1:]
 
@@ -499,7 +499,8 @@ class E2EVadModel:
         if len(self.sil_pdf_ids) > 0:
             assert len(self.scores) == 1  # 只支持batch_size = 1的测试
             sil_pdf_scores = [
-                self.scores[0][t][sil_pdf_id] for sil_pdf_id in self.sil_pdf_ids
+                self.scores[0][t - self.scores_offset][sil_pdf_id]
+                for sil_pdf_id in self.sil_pdf_ids
             ]
             sum_score = sum(sil_pdf_scores)
             noise_prob = math.log(sum_score) * self.vad_opts.speech_2_noise_ratio
