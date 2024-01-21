@@ -9,8 +9,8 @@ import pickle
 import numpy as np
 
 from paraformer.runtime.python.utils.asrOrtInferRuntimeSession import (
-    TokenIDConverter,
     CharTokenizer,
+    TokenIDConverter,
 )
 from paraformer.runtime.python.utils.lmOrtInderRuntimeSession import (
     LMOrtInferRuntimeSession,

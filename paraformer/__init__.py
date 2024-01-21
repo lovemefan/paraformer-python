@@ -11,8 +11,10 @@ from .runtime.python.fsmnVadInfer import FSMNVad, FSMNVadOnline
 from .runtime.python.paraformerInfer import ParaformerOffline, ParaformerOnline
 from .runtime.python.svInfer import SpeakerVerificationInfer
 from .runtime.python.utils.audioHelper import AudioReader
-from .runtime.python.utils.logger import (DEFAULT_FILEHANDLER_FORMAT,
-                                          DEFAULT_STDOUT_FORMAT)
+from .runtime.python.utils.logger import (
+    DEFAULT_FILEHANDLER_FORMAT,
+    DEFAULT_STDOUT_FORMAT,
+)
 
 __all__ = [
     "ParaformerOnline",

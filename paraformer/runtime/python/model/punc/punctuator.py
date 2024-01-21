@@ -10,10 +10,15 @@ from typing import Tuple, Union
 import numpy as np
 
 from paraformer.runtime.python.utils.asrOrtInferRuntimeSession import (
-    TokenIDConverter, code_mix_split_words, split_to_mini_sentence)
+    TokenIDConverter,
+    code_mix_split_words,
+    split_to_mini_sentence,
+)
 from paraformer.runtime.python.utils.logger import logger
 from paraformer.runtime.python.utils.puncOrtInferRuntimeSession import (
-    ONNXRuntimeError, PuncOrtInferRuntimeSession)
+    ONNXRuntimeError,
+    PuncOrtInferRuntimeSession,
+)
 from paraformer.runtime.python.utils.singleton import singleton
 
 

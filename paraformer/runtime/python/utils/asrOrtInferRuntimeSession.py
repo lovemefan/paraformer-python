@@ -3,7 +3,7 @@
 # @Time      :2023/8/8 20:20
 # @Author    :lovemefan
 # @Email     :lovemefan@outlook.com
-import io
+
 import logging
 import re
 import warnings
@@ -13,8 +13,13 @@ from typing import Any, Dict, Iterable, List, NamedTuple, Set, Union
 import jieba
 import numpy as np
 import yaml
-from onnxruntime import (GraphOptimizationLevel, InferenceSession,
-                         SessionOptions, get_available_providers, get_device)
+from onnxruntime import (
+    GraphOptimizationLevel,
+    InferenceSession,
+    SessionOptions,
+    get_available_providers,
+    get_device,
+)
 
 from paraformer.runtime.python.utils.singleton import singleton
 
@@ -170,6 +175,9 @@ class AsrOnlineBaseOrtInferRuntimeSession:
             model_file, sess_options=sess_opt, providers=EP_list
         )
 
+        # delete binary of model file to save memory
+        del model_file
+
         if device_id != "-1" and cuda_ep not in self.session.get_providers():
             warnings.warn(
                 f"{cuda_ep} is not avaiable for current env, the inference part is automatically shifted to be executed under {cpu_ep}.\n"
@@ -273,6 +281,10 @@ class AsrOfflineOrtInferRuntimeSession:
         self.session = InferenceSession(
             model_file, sess_options=sess_opt, providers=EP_list
         )
+
+        # delete binary of model file to save memory
+        del model_file
+
         self.contextual_model = InferenceSession(
             contextual_model, sess_options=sess_opt, providers=EP_list
         )

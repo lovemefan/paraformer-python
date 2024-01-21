@@ -9,8 +9,10 @@ import numpy as np
 
 from paraformer.runtime.python.cttPunctuator import CttPunctuator
 from paraformer.runtime.python.fsmnVadInfer import FSMNVadOnline
-from paraformer.runtime.python.paraformerInfer import (ParaformerOffline,
-                                                       ParaformerOnline)
+from paraformer.runtime.python.paraformerInfer import (
+    ParaformerOffline,
+    ParaformerOnline,
+)
 from paraformer.runtime.python.svInfer import SpeakerVerificationInfer
 from paraformer.runtime.python.utils.logger import logger
 

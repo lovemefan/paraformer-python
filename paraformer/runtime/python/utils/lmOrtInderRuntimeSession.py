@@ -8,11 +8,11 @@ from pathlib import Path
 
 import numpy as np
 from onnxruntime import (
-    SessionOptions,
     GraphOptimizationLevel,
-    get_device,
-    get_available_providers,
     InferenceSession,
+    SessionOptions,
+    get_available_providers,
+    get_device,
 )
 
 from paraformer.runtime.python.utils.singleton import singleton

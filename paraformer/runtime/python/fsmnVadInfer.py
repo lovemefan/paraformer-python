@@ -24,8 +24,7 @@ from paraformer.runtime.python.model.vad.fsmnvad import E2EVadModel
 from paraformer.runtime.python.utils.asrOrtInferRuntimeSession import read_yaml
 from paraformer.runtime.python.utils.audioHelper import AudioReader
 from paraformer.runtime.python.utils.logger import logger
-from paraformer.runtime.python.utils.preprocess import (WavFrontend,
-                                                        WavFrontendOnline)
+from paraformer.runtime.python.utils.preprocess import WavFrontend, WavFrontendOnline
 
 root_dir = Path(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

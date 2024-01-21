@@ -8,8 +8,13 @@ from pathlib import Path
 from typing import List, Union
 
 import numpy as np
-from onnxruntime import (GraphOptimizationLevel, InferenceSession,
-                         SessionOptions, get_available_providers, get_device)
+from onnxruntime import (
+    GraphOptimizationLevel,
+    InferenceSession,
+    SessionOptions,
+    get_available_providers,
+    get_device,
+)
 
 from paraformer.runtime.python.utils.singleton import singleton
 
@@ -61,6 +66,9 @@ class PuncOrtInferRuntimeSession:
         self.session = InferenceSession(
             model_file, sess_options=sess_opt, providers=EP_list
         )
+
+        # del binary of model file to save memory
+        del model_file
 
         if device_id != "-1" and cuda_ep not in self.session.get_providers():
             logging.warnings.warn(
