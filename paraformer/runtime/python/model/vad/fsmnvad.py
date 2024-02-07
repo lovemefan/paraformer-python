@@ -253,6 +253,7 @@ class E2EVadModel:
         self.scores_offset = 0
         self.max_time_out = False
         self.decibel = []
+        self.decibel_offset = 0
         self.data_buf_size = 0
         self.data_buf_all_size = 0
         self.waveform = None
@@ -283,8 +284,10 @@ class E2EVadModel:
         )
         self.speech_noise_thres = self.vad_opts.speech_noise_thres
         self.scores = None
+        self.scores_offset = 0
         self.max_time_out = False
         self.decibel = []
+        self.decibel_offset = 0
         self.data_buf = 0
         self.data_buf_all = 0
         self.waveform = None
@@ -313,6 +316,7 @@ class E2EVadModel:
             self.data_buf_size = self.data_buf_all_size
         else:
             self.data_buf_all_size += len(self.waveform[0])
+
         for offset in range(
             0, self.waveform.shape[1] - frame_sample_length + 1, frame_shift_length
         ):
@@ -485,7 +489,7 @@ class E2EVadModel:
 
     def get_frame_state(self, t: int) -> FrameState:
         frame_state = FrameState.kFrameStateInvalid
-        cur_decibel = self.decibel[t]
+        cur_decibel = self.decibel[t - self.decibel_offset]
         cur_snr = cur_decibel - self.noise_average_decibel
         # for each frame, calc log posterior probability of each state
         if cur_decibel < self.vad_opts.decibel_thres:
@@ -667,6 +671,8 @@ class E2EVadModel:
             # print(f"cur frame: {self.frm_cnt - 1 - i}, state is {frame_state}")
             self.detect_one_frame(frame_state, self.frm_cnt - 1 - i, False)
 
+        self.decibel = self.decibel[self.vad_opts.nn_eval_block_size - 1 :]
+        self.decibel_offset = self.frm_cnt - 1 - i
         return 0
 
     def detect_last_frames(self) -> int:
