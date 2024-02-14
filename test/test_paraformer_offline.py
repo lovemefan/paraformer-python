@@ -16,7 +16,7 @@ if __name__ == "__main__":
     logging.info("Testing offline asr")
     wav_path = "test/vad_example.wav"
     speech, sample_rate = AudioReader.read_wav_file(wav_path)
-    model = ParaformerOffline()
+    model = ParaformerOffline(use_lm=True)
     vad = FSMNVad()
     punc = CttPunctuator()
 
@@ -24,7 +24,11 @@ if __name__ == "__main__":
     results = ""
     for part in segments:
         _result = model.infer_offline(
-            speech[part[0] * 16 : part[1] * 16], hot_words="任意热词 空格分开"
+            speech[part[0] * 16 : part[1] * 16],
+            hot_words="",
+            beam_search=True,
+            beam_size=5,
+            lm_weight=0.1,
         )
         results += punc.punctuate(_result)[0]
     logging.info(results)
