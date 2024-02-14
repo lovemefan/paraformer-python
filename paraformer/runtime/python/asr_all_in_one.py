@@ -100,6 +100,8 @@ class AsrAllInOne:
         self.start_frame = 0
         self.end_frame = 0
         self.vad_pre_idx = 0
+        self.asr_online.reset_cache()
+        self.vad.in_cache = None
         self.vad.vad.all_reset_detection()
 
     def online(self, chunk: np.ndarray, is_final: bool = False):
