@@ -225,6 +225,9 @@ class E2EVadModel:
             self.vad_opts.frame_in_ms,
         )
         self.model = VadOrtInferRuntimeSession(config, root_dir)
+        self.all_reset_detection()
+
+    def all_reset_detection(self):
         # init variables
         self.is_final = False
         self.data_buf_start_frame = 0
@@ -256,40 +259,6 @@ class E2EVadModel:
         self.decibel_offset = 0
         self.data_buf_size = 0
         self.data_buf_all_size = 0
-        self.waveform = None
-        self.reset_detection()
-
-    def all_reset_detection(self):
-        self.is_final = False
-        self.data_buf_start_frame = 0
-        self.frm_cnt = 0
-        self.latest_confirmed_speech_frame = 0
-        self.lastest_confirmed_silence_frame = -1
-        self.continous_silence_frame_count = 0
-        self.vad_state_machine = VadStateMachine.kVadInStateStartPointNotDetected
-        self.confirmed_start_frame = -1
-        self.confirmed_end_frame = -1
-        self.number_end_time_detected = 0
-        self.sil_frame = 0
-        self.sil_pdf_ids = self.vad_opts.sil_pdf_ids
-        self.noise_average_decibel = -100.0
-        self.pre_end_silence_detected = False
-        self.next_seg = True
-
-        self.output_data_buf = []
-        self.output_data_buf_offset = 0
-        self.frame_probs = []
-        self.max_end_sil_frame_cnt_thresh = (
-            self.vad_opts.max_end_silence_time - self.vad_opts.speech_to_sil_time_thres
-        )
-        self.speech_noise_thres = self.vad_opts.speech_noise_thres
-        self.scores = None
-        self.scores_offset = 0
-        self.max_time_out = False
-        self.decibel = []
-        self.decibel_offset = 0
-        self.data_buf = 0
-        self.data_buf_all = 0
         self.waveform = None
         self.reset_detection()
 
@@ -572,6 +541,7 @@ class E2EVadModel:
                     self.output_data_buf_offset += 1  # need update this parameter
             if segment_batch:
                 segments.append(segment_batch)
+
         if is_final:
             # reset class variables and clear the dict for the next query
             self.all_reset_detection()
