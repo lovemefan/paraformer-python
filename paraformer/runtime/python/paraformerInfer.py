@@ -43,6 +43,9 @@ class ParaformerOnline:
 
         return result[0]["preds"][0] if len(result) > 0 else ""
 
+    def reset_cache(self):
+        self.param_dict = {"cache": dict()}
+
 
 class ParaformerOffline:
     def __init__(self, model_dir=None, *, use_lm=False, intra_op_num_threads=4):
