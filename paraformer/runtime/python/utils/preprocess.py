@@ -382,6 +382,7 @@ class WavFrontendOnline(WavFrontend):
         self.fbank_fn = knf.OnlineFbank(self.opts)
         self.reserve_waveforms = None
         self.input_cache = None
+        self.waveform = None
         self.lfr_splice_cache = []
 
 
