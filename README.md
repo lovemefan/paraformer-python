@@ -15,6 +15,9 @@ Paraformer是达摩院语音团队提出的一种高效的非自回归端到端�
 
 另外praformer的接口服务在另一个项目[Paraformer-webserver](https://github.com/lovemefan/Paraformer-webserver)中
 
+***由于github的lfs限制，单个文件最大不能超过100MB，因此将onnx切分成了多个文件上传，但每个模块实际导出只有一个onnx，
+读取的模型文件列表会合并二进制文件然后加载onnx模型***
+
 ## 目前的进度
 * [2023年10月18日] 
   * [x] vad模型流式和非流式onnx推理
